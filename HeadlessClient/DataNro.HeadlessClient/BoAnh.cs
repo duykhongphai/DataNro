@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO;
+using System.Text.Json;
 using DataNro.GiaoThuc;
 using DataNro.Mang;
 
@@ -189,7 +190,48 @@ public sealed class BoAnh
             ThemAnhCuaPart(d, npc.legId, set);
         }
 
+        // Hai ảnh client gọi thẳng bằng số, không qua bảng part nào: rương đồ (NPC 3) và biển
+        // báo khu (NPC 6). Xem Npc.paint - hai id này nằm cứng trong mã client.
+        set.Add(265);
+        set.Add(545);
+
         return set.ToList();
+    }
+
+    /// <summary>
+    /// Ghi bảng kích thước của mọi ảnh đang có ngoài đĩa: <c>{"3":[80,28], ...}</c>.
+    ///
+    /// <para>
+    /// Trang web cần con số này để tính hộp bao của hình NPC <b>trước khi</b> ảnh tải xong -
+    /// CSS không có cách nào hỏi kích thước gốc của một tấm ảnh, mà đợi ba mảnh tải xong rồi
+    /// mới bố trí thì cả lưới nhấp nháy. Chỉ đọc 64 byte đầu mỗi tệp nên rẻ.
+    /// </para>
+    /// </summary>
+    public static void GhiKichThuoc(string thuMucRa)
+    {
+        if (!Directory.Exists(thuMucRa)) return;
+
+        var bang = new SortedDictionary<int, int[]>();
+        var dau = new byte[64];
+
+        foreach (var f in Directory.EnumerateFiles(thuMucRa, "*.png", SearchOption.AllDirectories))
+        {
+            if (!int.TryParse(Path.GetFileNameWithoutExtension(f), out var id)) continue;
+
+            try
+            {
+                using var s = File.OpenRead(f);
+                if (s.Read(dau, 0, dau.Length) < dau.Length) continue;
+                if (AnhPng.KichThuoc(dau, out var rong, out var cao)) bang[id] = new[] { rong, cao };
+            }
+            catch (Exception)
+            {
+                // tệp hỏng thì bỏ qua, thiếu một dòng trong bảng không chết ai
+            }
+        }
+
+        File.WriteAllText(Path.Combine(thuMucRa, "Sizes.json"),
+            JsonSerializer.Serialize(bang, new JsonSerializerOptions { WriteIndented = false }) + "\n");
     }
 
     /// <summary>Mọi id ảnh trong một part. Chưa có bảng part thì không thêm gì.</summary>

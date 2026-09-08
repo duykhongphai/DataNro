@@ -28,6 +28,9 @@ hành. Ví dụ id 410 ở `TeaMobi/Icons/0/410.png`, id 17529 ở `TeaMobi/Icon
 Chia thư mục con vì GitHub cắt danh sách thư mục ở 1000 tệp — tệp vẫn còn đủ và raw URL vẫn
 chạy, chỉ là mở trên web thì nhìn như mất bớt.
 
+`TeaMobi/Icons/Sizes.json` là bảng kích thước của mọi ảnh, dạng `{"410":[56,56], ...}` — cần để
+tính hộp bao hình NPC mà không phải đợi ba mảnh tải xong.
+
 | Máy chủ | Thư mục |
 |---|---|
 | Vũ trụ 1–15 | `TeaMobi/Server1` … `TeaMobi/Server15` |
@@ -171,6 +174,21 @@ y = -tuThe[k][2] + khung.dy        (dấu TRỪ ở dy của tư thế)
 Thứ tự mục trong bảng tư thế là **đầu / chân / thân**, còn ba id của NPC là **đầu / thân /
 chân** — lệch nhau nên rất dễ ghép nhầm. Bảng tư thế là hằng nằm trong client (33 tư thế),
 `index.html` chép sẵn; NPC đứng yên dùng tư thế 0.
+
+Vài NPC client **không** ghép từ part, id nằm cứng trong `Npc.paint`:
+
+| NPC | Client vẽ gì |
+|---|---|
+| `3` Rương đồ | ảnh `265` |
+| `6` Khu vực | ảnh `545` |
+| `4` Đậu thần | không vẽ ở đây — cây đậu có hoạt ảnh riêng |
+| `50` Quả trứng, `51` Dưa hấu | mảng ảnh máy chủ gửi kèm lúc chúng hiện trong map |
+
+Ba part của bốn con cuối đều là `-1`, nên có cố cũng không ghép được gì. Ghép part cho NPC `3`
+thì ra hai mảnh rời chẳng ra hình gì — đó là dấu hiệu đã bỏ sót bảng ngoại lệ này.
+
+NPC **không cùng cỡ**: Quốc Vương hay Rồng Thiêng cao gấp mấy lần người thường, nên khung nhìn
+phải tính theo hộp bao thật của ba mảnh chứ không đóng cứng một ô.
 
 **Quái thì mỗi con một tấm sprite riêng**, không ghép từ part. `MobFrames.json` cho biết cắt
 tấm ấy ở đâu:

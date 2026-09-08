@@ -130,22 +130,19 @@ main { max-width: 1560px; margin: 0 auto; padding: 18px 20px 80px; }
   display: grid; gap: 12px;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
 }
-/* Map và option chỉ có id với tên: mỗi dòng một mục, kéo hết chiều ngang. Tên map dài
-   không bị cắt, mà mắt chỉ phải chạy dọc một cột chứ không nhảy ngang. Gộp thành một khối
-   liền có viền chung, mỗi dòng ngăn nhau bằng một vạch mảnh. */
+/* Map và option chỉ có id với tên nên mỗi mục là một dòng - nhưng một dòng kéo hết 1500px
+   thì mắt phải chạy qua khoảng trống dài ngoẵng mới tới chữ, mà bó lại 860px thì nửa màn hình
+   bỏ không. Nên xếp thành nhiều cột: vẫn mỗi dòng một mục, mà lấp kín chiều ngang. */
 .luoi {
-  /* Hạn chiều ngang: một dòng chỉ có id với tên mà kéo hết 1500px thì mắt phải chạy qua một
-     khoảng trống dài ngoẵng mới tới chữ. Cỡ này vừa tầm đọc. */
-  max-width: 860px;
-  background: var(--noi); border: 1px solid var(--vien);
-  border-radius: var(--r); box-shadow: var(--bong-1); overflow: hidden;
+  display: grid; gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
 }
 .o-nho {
   display: flex; align-items: center; gap: 14px;
-  padding: 11px 16px; cursor: pointer;
-  border-bottom: 1px solid var(--vien-mo);
+  padding: 11px 14px; cursor: pointer;
+  background: var(--noi); border: 1px solid var(--vien);
+  border-radius: 10px; box-shadow: var(--bong-1);
 }
-.o-nho:last-child { border-bottom: 0; }
 .o-nho:hover { background: var(--nhan-mo); }
 .o-nho[aria-selected="true"] { background: var(--nhan-mo); box-shadow: inset 3px 0 0 var(--nhan); }
 .o-nho .chep { flex: none; min-width: 62px; justify-content: center; }
@@ -192,16 +189,16 @@ main { max-width: 1560px; margin: 0 auto; padding: 18px 20px 80px; }
   -webkit-mask: var(--ic-vo) center/contain no-repeat; mask: var(--ic-vo) center/contain no-repeat;
 }
 /* Hình NPC ghép từ ba mảnh: khung trong vẽ theo toạ độ game (đã nhân với mức phóng), khung
-   ngoài thu nhỏ cả cụm cho vừa ô 88px. Thu bằng transform chứ không đổi width/height vì các
-   mảnh đặt tuyệt đối theo px. */
+   ngoài thu cả cụm cho vừa ô. Mức thu do JS đặt vì phụ thuộc hộp bao của từng con - Quốc
+   Vương cao gấp ba người thường. Thu bằng transform chứ không đổi width/height vì các mảnh
+   đặt tuyệt đối theo px. */
 .npc-hinh {
-  width: 88px; height: 100px; flex: none;
+  width: 104px; height: 104px; flex: none;
   border-radius: 12px; background: var(--chim); border: 1px solid var(--vien-mo);
   overflow: hidden; position: relative;
 }
 .npc-khung {
   position: absolute; left: 50%; top: 50%;
-  transform: translate(-50%, -50%) scale(.42);
   transform-origin: center;
 }
 .npc-khung img { position: absolute; image-rendering: auto; }
@@ -478,6 +475,7 @@ const MAC_DINH = {
 const T = { chiMuc: MAC_DINH, nph: "TeaMobi", sv: "Server1", muc: "vatpham", tim: "", sap: "id" };
 const kho = new Map();
 let dangHien = [];   // danh sách đang hiển thị, để ngăn chi tiết tra lại theo chỉ số
+let phuHienTai = [];  // bảng part / bảng quái của mục đang xem, ngăn chi tiết vẽ hình lại
 const $ = (id) => document.getElementById(id);
 
 // ══════════ tiện ích ══════════
@@ -514,6 +512,19 @@ function veAnh(id) {
 }
 
 /**
+ * Vài NPC client không ghép từ part mà gọi thẳng một ảnh theo số, id nằm cứng trong mã
+ * (Npc.paint). Ghép part cho mấy con này ra hình vô nghĩa - rương đồ thành hai mảnh rời.
+ */
+const NPC_ANH_RIENG = { 3: 265, 6: 545 };
+
+/**
+ * NPC client không vẽ từ dữ liệu tĩnh: cây đậu thần có hoạt ảnh riêng, còn quả trứng với dưa
+ * hấu thì máy chủ gửi kèm mảng ảnh lúc chúng hiện ra trong map. Ba id part của chúng đều là
+ * -1 nên có cố cũng không ghép được gì.
+ */
+const NPC_KHONG_VE = new Set([4, 50, 51]);
+
+/**
  * Ghép hình NPC từ ba mảnh, đúng cách client vẽ (Npc.cs:290):
  *
  *   vẽ đầu, rồi chân, rồi thân — thân sau cùng nên đè lên trên
@@ -522,8 +533,15 @@ function veAnh(id) {
  *
  * Thứ tự mục trong bảng tư thế là đầu / chân / thân, còn ba id của NPC là đầu / thân / chân -
  * lệch nhau nên rất dễ ghép nhầm.
+ *
+ * Khung nhìn tính theo hộp bao thật của ba mảnh chứ không phải một ô cố định: NPC to như Quốc
+ * Vương hay Rồng Thiêng cao gấp mấy lần người thường, ô cố định cắt cụt còn mỗi mảng màu.
  */
-function veHinhNpc(x, parts) {
+function veHinhNpc(x, parts, co) {
+  const rieng = NPC_ANH_RIENG[x.npcTemplateId];
+  if (rieng !== undefined) return oAnhNpc([{ id: rieng, x: 0, y: 0 }], co);
+  if (NPC_KHONG_VE.has(x.npcTemplateId)) return `<span class="npc-hinh"></span>`;
+
   const t = TU_THE[TU_THE_DUNG];
   const manh = [
     { part: parts[x.headId], tt: t[0] },
@@ -531,18 +549,46 @@ function veHinhNpc(x, parts) {
     { part: parts[x.bodyId], tt: t[2] }
   ];
 
-  const lop = manh.map(({ part, tt }) => {
+  const lop = [];
+  for (const { part, tt } of manh) {
     const k = part?.pi?.[tt[0]];
-    if (!k || k.id < 0) return "";
-    const x1 = (tt[1] + k.dx - KHUNG_NPC.x0) * PHONG;
-    const y1 = (-tt[2] + k.dy - KHUNG_NPC.y0) * PHONG;
-    return `<img loading="lazy" decoding="async" alt="" style="left:${x1}px;top:${y1}px"
-      src="${T.nph}/Icons/${Math.floor(k.id / 1000)}/${k.id}.png"
-      onerror="this.style.display='none'">`;
-  }).join("");
+    if (!k || k.id < 0) continue;
+    lop.push({ id: k.id, x: tt[1] + k.dx, y: -tt[2] + k.dy });
+  }
 
+  return oAnhNpc(lop, co);
+}
+
+/**
+ * Đặt mấy mảnh ảnh vào một ô vuông, co lại cho vừa.
+ *
+ * Toạ độ mảnh là đơn vị game, kích thước ảnh thì tra bảng <c>Icons/Sizes.json</c> - phải biết
+ * trước mới tính được hộp bao, chứ đợi ảnh tải xong rồi mới bố trí thì cả lưới nhấp nháy.
+ * Chưa có bảng thì lùi về ô cố định cỡ một nhân vật thường.
+ */
+function oAnhNpc(lop, co) {
+  if (!lop.length) return `<span class="npc-hinh"></span>`;
+
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const m of lop) {
+    const kt = co?.[m.id];
+    const w = kt ? kt[0] / PHONG : KHUNG_NPC.w;
+    const h = kt ? kt[1] / PHONG : KHUNG_NPC.h;
+    if (x0 > m.x) x0 = m.x;
+    if (y0 > m.y) y0 = m.y;
+    if (x1 < m.x + w) x1 = m.x + w;
+    if (y1 < m.y + h) y1 = m.y + h;
+  }
+
+  const hinh = lop.map((m) =>
+    `<img loading="lazy" decoding="async" alt="" style="left:${(m.x - x0) * PHONG}px;top:${(m.y - y0) * PHONG}px"
+      src="${T.nph}/Icons/${Math.floor(m.id / 1000)}/${m.id}.png"
+      onerror="this.style.display='none'">`).join("");
+
+  const rong = (x1 - x0) * PHONG, cao = (y1 - y0) * PHONG;
+  const ti = Math.min(1, 92 / Math.max(rong, cao, 1));
   return `<span class="npc-hinh"><span class="npc-khung"
-    style="width:${KHUNG_NPC.w * PHONG}px;height:${KHUNG_NPC.h * PHONG}px">${lop}</span></span>`;
+    style="width:${rong}px;height:${cao}px;transform:translate(-50%,-50%) scale(${ti.toFixed(3)})">${hinh}</span></span>`;
 }
 
 /**
@@ -645,6 +691,23 @@ async function docJson(duong) {
  * Bảng mảnh dựng hình, tải riêng vì chỉ mục NPC mới cần và nó nặng hơn nửa MB.
  * Máy chủ nào chưa có <c>Parts.json</c> thì trả mảng rỗng và NPC quay về kiểu ba ô ảnh rời.
  */
+/**
+ * Bảng kích thước ảnh (id → [rộng, cao]). Cần để tính hộp bao hình NPC trước khi ảnh tải về.
+ * Thiếu bảng thì hình vẫn vẽ, chỉ là lùi về ô cố định cỡ một nhân vật thường.
+ */
+async function layKichThuoc() {
+  const khoa = `${T.nph}/Icons/Sizes.json`;
+  if (kho.has(khoa)) return kho.get(khoa);
+  let d = null;
+  try {
+    d = await docJson(khoa);
+  } catch {
+    // lượt chạy cũ chưa sinh bảng này
+  }
+  kho.set(khoa, d);
+  return d;
+}
+
 async function layParts() {
   const khoa = `${T.nph}/${T.sv}/Parts.json`;
   if (kho.has(khoa)) return kho.get(khoa);
@@ -720,12 +783,12 @@ const VE = {
     <div class="the-duoi">${chepNhan("id ", x.mobTemplateId)}</div>
   </article>`).join(""),
 
-  npc: (ds, parts) => ds.map((x, i) => `<article class="the" data-i="${i}">
+  npc: (ds, phu) => ds.map((x, i) => `<article class="the" data-i="${i}">
     <div class="the-tren">
-      ${parts.length ? veHinhNpc(x, parts) : ""}
+      ${phu.parts.length ? veHinhNpc(x, phu.parts, phu.co) : ""}
       <div class="the-chu">
         <div class="the-ten">${thoat(x.name)}</div>
-        ${parts.length ? "" : `<div class="bo-anh">${veAnh(x.headId)}${veAnh(x.bodyId)}${veAnh(x.legId)}</div>`}
+        ${phu.parts.length ? "" : `<div class="bo-anh">${veAnh(x.headId)}${veAnh(x.bodyId)}${veAnh(x.legId)}</div>`}
         <div class="the-chip">${(x.menu || []).flat().map((m) => chep(m)).join("")}</div>
       </div>
     </div>
@@ -803,16 +866,20 @@ const CHI_TIET = {
       dongTT("Xếp chồng", x.isUpToUp ? "có" : "không", false)
   }),
   quai: (x) => ({
-    anh: -1, ten: x.name, phu: `Quái · id ${x.mobTemplateId}`,
+    hinh: phuHienTai.size ? veHinhQuai(x.mobTemplateId, phuHienTai) : "",
+    ten: x.name, phu: `Quái · id ${x.mobTemplateId}`,
     dong: dongTT("Id quái", x.mobTemplateId) +
       dongTT("Máu", x.hp.toLocaleString("vi-VN"), false) + dongTT("Loại", x.type, false) +
       dongTT("Tầm đi", x.rangeMove, false) + dongTT("Tốc độ", x.speed, false) +
       dongTT("Phi tiêu", x.dartType, false)
   }),
   npc: (x) => ({
-    anh: x.headId, ten: x.name, phu: `NPC · id ${x.npcTemplateId}`,
-    dong: dongTT("Id NPC", x.npcTemplateId) + dongTT("Id đầu", x.headId) +
-      dongTT("Id thân", x.bodyId) + dongTT("Id chân", x.legId) +
+    // headId không phải id ảnh mà là CHỈ SỐ vào bảng part - đưa thẳng cho veAnh thì ra một
+    // tấm ảnh chẳng liên quan. Ghép lại đúng như ngoài thẻ.
+    hinh: veHinhNpc(x, phuHienTai.parts ?? [], phuHienTai.co),
+    ten: x.name, phu: `NPC · id ${x.npcTemplateId}`,
+    dong: dongTT("Id NPC", x.npcTemplateId) + dongTT("Part đầu", x.headId) +
+      dongTT("Part thân", x.bodyId) + dongTT("Part chân", x.legId) +
       (x.menu || []).map((m, i) => dongTT(`Menu ${i}`, (m || []).join(" · "))).join("")
   }),
   option: (x) => ({
@@ -832,7 +899,7 @@ function moNgan(i) {
   const ct = CHI_TIET[T.muc](x);
   $("ngan").innerHTML = `
     <div class="ngan-dau">
-      ${ct.anh >= 0 ? veAnh(ct.anh) : ""}
+      ${ct.hinh ?? (ct.anh >= 0 ? veAnh(ct.anh) : "")}
       <div style="min-width:0">
         <h2>${thoat(ct.ten)}</h2>
         <p>${thoat(ct.phu ?? "")}</p>
@@ -933,9 +1000,10 @@ async function ve() {
 
   // Chỉ mục NPC mới cần bảng part; tải trước khi vẽ để khỏi nhấp nháy.
   // Mỗi mục cần một bảng phụ khác nhau: NPC cần bảng part, quái cần bảng khung.
-  const phu = T.muc === "npc" ? await layParts()
+  const phu = T.muc === "npc" ? { parts: await layParts(), co: await layKichThuoc() }
     : T.muc === "quai" ? await layQuai()
     : [];
+  phuHienTai = phu;
   if (phien !== phienVe) return;
 
   dangHien = loc(ds);

@@ -88,6 +88,10 @@ public static class Program
         if (c.TaiAnh) await TaiAnhAsync(phien, c);
         if (c.TaiQuai) await TaiQuaiAsync(phien, c);
 
+        // Bảng kích thước ảnh: quét cả thư mục chứ không chỉ phần vừa tải, và chạy cả khi lượt
+        // này bỏ ảnh - lần chạy trước có thể đã thêm ảnh mà chưa kịp ghi bảng.
+        BoAnh.GhiKichThuoc(Path.Combine(c.Ra, c.NhaPhatHanh, "Icons"));
+
         phien.Ngat();
         return 0;
     }
