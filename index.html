@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="vi" data-theme="toi">
+<html lang="vi">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -37,27 +37,6 @@
   --ic-xong: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
   --ic-mui: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 6 6 6-6 6'/%3E%3C/svg%3E");
   --ic-vo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Cpath d='m3 16 5-5 4 4'/%3E%3Ccircle cx='15' cy='9' r='1.6'/%3E%3C/svg%3E");
-}
-html[data-theme="toi"] {
-  --nen:      #0a0e14;
-  --noi:      #121820;
-  --chim:     #171e28;
-  --vien:     #26313f;
-  --vien-mo:  #1d2632;
-  --chu:      #eaeff6;
-  --chu-vua:  #a9b6c6;
-  --chu-mo:   #75828f;
-  --nhan:     #ff8a3d;
-  --nhan-chu: #1a0c02;
-  --nhan-mo:  rgba(255, 138, 61, .13);
-  --dat:      #4ec26a;
-  --nam:      #6cb0ff;
-  --xay:      #e5b055;
-  --xam:      #93a0b0;
-  --do:       #f47b72;
-  --bong-1:   0 1px 2px rgba(0, 0, 0, .4);
-  --bong-2:   0 4px 14px rgba(0, 0, 0, .45);
-  --bong-3:   0 20px 60px rgba(0, 0, 0, .6);
 }
 
 * { box-sizing: border-box; }
@@ -144,8 +123,25 @@ main { max-width: 1560px; margin: 0 auto; padding: 18px 20px 80px; }
   display: grid; gap: 12px;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
 }
-/* Map và option chỉ có id với tên: để thẻ rộng bằng thẻ vật phẩm thì trống hoác. */
-.dan.gon { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+/* Map và option chỉ có id với tên - dựng thành thẻ to thì mỗi thẻ ba dòng chữ giữa một
+   khoảng trống mênh mông. Để lưới ô nhỏ, một màn nhìn hết gần hai trăm map. */
+.luoi {
+  display: grid; gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+.o-nho {
+  display: flex; align-items: center; gap: 11px;
+  padding: 10px 12px; border-radius: 10px; cursor: pointer;
+  background: var(--noi); border: 1px solid var(--vien); box-shadow: var(--bong-1);
+  transition: border-color .12s, box-shadow .12s;
+}
+.o-nho:hover { border-color: var(--nhan); box-shadow: var(--bong-2); }
+.o-nho[aria-selected="true"] { border-color: var(--nhan); box-shadow: 0 0 0 3px var(--nhan-mo); }
+.o-nho .chep { flex: none; }
+.o-nho .nho-ten {
+  font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.o-nho .nho-phu { margin-left: auto; flex: none; font: 500 12px var(--mono); color: var(--chu-mo); }
 
 .the {
   background: var(--noi); border: 1px solid var(--vien); border-radius: var(--r);
@@ -318,7 +314,7 @@ footer {
   /* Nhét năm thứ vào một hàng 375px thì ô tìm bị bóp còn mỗi cái kính lúp. */
   .hang-2 { height: auto; padding-top: 9px; padding-bottom: 9px; flex-wrap: wrap; }
   .o-tim { order: -1; flex: 1 0 100%; max-width: none; }
-  .dan, .dan.gon { grid-template-columns: 1fr; }
+  .dan, .luoi { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -346,12 +342,6 @@ footer {
       <i id="capnhat">đang tải…</i>
     </div>
     <nav class="tab" id="tab" role="tablist"></nav>
-    <button class="nut nut-tron" id="doi-mau" title="Đổi sáng / tối" aria-label="Đổi sáng tối">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="8"/>
-        <path d="M12 4a8 8 0 0 0 0 16Z" fill="currentColor" stroke="none"/>
-      </svg>
-    </button>
   </div>
 
   <div class="hang hang-2">
@@ -583,20 +573,13 @@ const VE = {
     </div>
   </article>`).join(""),
 
-  option: (ds) => ds.map((x, i) => `<article class="the" data-i="${i}">
-    <div class="the-tren">
-      <div class="the-chu"><div class="the-ten">${thoat(x.name)}</div></div>
-    </div>
-    <div class="the-duoi">
-      ${chepNhan("id ", x.id)}<span class="the-so"><em>loại</em> ${x.type}</span>
-    </div>
+  option: (ds) => ds.map((x, i) => `<article class="o-nho" data-i="${i}">
+    ${chep(x.id)}<span class="nho-ten">${thoat(x.name)}</span>
+    <span class="nho-phu">loại ${x.type}</span>
   </article>`).join(""),
 
-  map: (ds) => ds.map((x, i) => `<article class="the" data-i="${i}">
-    <div class="the-tren">
-      <div class="the-chu"><div class="the-ten">${thoat(x.name)}</div></div>
-    </div>
-    <div class="the-duoi">${chepNhan("id ", x.id)}</div>
+  map: (ds) => ds.map((x, i) => `<article class="o-nho" data-i="${i}">
+    ${chep(x.id)}<span class="nho-ten">${thoat(x.name)}</span>
   </article>`).join("")
 };
 
@@ -705,7 +688,7 @@ function moNgan(i) {
   $("chep-json").onclick = () => chepChu(JSON.stringify(x, null, 2), "Đã chép JSON");
   $("dong-ngan").onclick = dongNgan;
 
-  document.querySelectorAll("article[data-i]").forEach((e) =>
+  document.querySelectorAll("[data-i]").forEach((e) =>
     e.setAttribute("aria-selected", String(Number(e.dataset.i) === i)));
 }
 
@@ -713,7 +696,7 @@ function dongNgan() {
   $("ngan").classList.remove("hien");
   $("ngan").setAttribute("aria-hidden", "true");
   $("man").classList.remove("hien");
-  document.querySelectorAll('article[data-i][aria-selected="true"]')
+  document.querySelectorAll('[data-i][aria-selected="true"]')
     .forEach((e) => e.removeAttribute("aria-selected"));
 }
 
@@ -758,7 +741,7 @@ async function ve() {
   const phien = ++phienVe;
   const noi = $("noi-dung");
   $("link-json").href = `${T.nph}/${T.sv}/${MUC[T.muc].tep}`;
-  noi.classList.toggle("gon", T.muc === "map" || T.muc === "option");
+  noi.className = T.muc === "map" || T.muc === "option" ? "luoi" : "dan";
 
   let ds;
   try {
@@ -832,14 +815,7 @@ function ghiHash() {
   if (location.hash !== h) history.replaceState(null, "", h);
 }
 
-function datMau(m) {
-  document.documentElement.dataset.theme = m;
-  try { localStorage.setItem("datanro-mau", m); } catch {}
-}
-
 async function khoiDong() {
-  try { datMau(localStorage.getItem("datanro-mau") || "toi"); } catch {}
-
   try {
     T.chiMuc = await docJson("index.json");
   } catch {
@@ -884,8 +860,6 @@ async function khoiDong() {
   });
 
   $("sap").addEventListener("change", (e) => { T.sap = e.target.value; ve(); });
-  $("doi-mau").addEventListener("click", () =>
-    datMau(document.documentElement.dataset.theme === "toi" ? "sang" : "toi"));
 
   // Chép cả loạt id đang hiện: dựng danh sách id cho tool thì cần đúng cái này.
   $("chep-tat").addEventListener("click", () => {
@@ -907,7 +881,7 @@ async function khoiDong() {
   // Bấm vào thẻ (chỗ nào không phải chip) thì mở ngăn chi tiết.
   $("noi-dung").addEventListener("click", (e) => {
     if (e.target.closest("[data-chep]")) return;
-    const the = e.target.closest("article[data-i]");
+    const the = e.target.closest("[data-i]");
     if (the) moNgan(Number(the.dataset.i));
   });
 
