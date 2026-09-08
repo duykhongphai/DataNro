@@ -1,0 +1,254 @@
+[
+  {
+    "id": 0,
+    "name": "Tấn công ngoại: +#%"
+  },
+  {
+    "id": 1,
+    "name": "Tấn công nội: +#%"
+  },
+  {
+    "id": 2,
+    "name": "Hỏa công: +#"
+  },
+  {
+    "id": 3,
+    "name": "Băng sát: +#"
+  },
+  {
+    "id": 4,
+    "name": "Phong lôi: +#"
+  },
+  {
+    "id": 5,
+    "name": "Hỏa công ngoại: +#"
+  },
+  {
+    "id": 6,
+    "name": "Băng sát ngoại: +#"
+  },
+  {
+    "id": 7,
+    "name": "Phong lôi ngoại: +#"
+  },
+  {
+    "id": 8,
+    "name": "Hỏa công nội: +#"
+  },
+  {
+    "id": 9,
+    "name": "Băng sát nội: +#"
+  },
+  {
+    "id": 10,
+    "name": "Phong lôi nội: +#"
+  },
+  {
+    "id": 11,
+    "name": "Tấn công cơ bản: +#%"
+  },
+  {
+    "id": 12,
+    "name": "Chính xác: +#"
+  },
+  {
+    "id": 13,
+    "name": "Né đòn: +#"
+  },
+  {
+    "id": 14,
+    "name": "Chí mạng: +#"
+  },
+  {
+    "id": 15,
+    "name": "Phản đòn cận chiến: +#"
+  },
+  {
+    "id": 16,
+    "name": "Tốc độ di chuyển: +#"
+  },
+  {
+    "id": 17,
+    "name": "Tỉ lệ HP tối đa: +#%"
+  },
+  {
+    "id": 18,
+    "name": "Tỉ lệ MP tối đa: +#%"
+  },
+  {
+    "id": 19,
+    "name": "Kháng tất cả: +#"
+  },
+  {
+    "id": 20,
+    "name": "Kháng hỏa: +#"
+  },
+  {
+    "id": 21,
+    "name": "Kháng băng: +#"
+  },
+  {
+    "id": 22,
+    "name": "Kháng phong: +#"
+  },
+  {
+    "id": 23,
+    "name": "Kháng phản đòn: +#"
+  },
+  {
+    "id": 24,
+    "name": "Xác xuất gây bỏng: +#% duy trì 2 giây"
+  },
+  {
+    "id": 25,
+    "name": "Xác xuất đóng băng: +#% duy trì 1.5 giây"
+  },
+  {
+    "id": 26,
+    "name": "Xác xuất gây choáng: +#% duy trì 1 giây"
+  },
+  {
+    "id": 27,
+    "name": "Nữa giây phục hồi HP: +# duy trì 5 giây"
+  },
+  {
+    "id": 28,
+    "name": "Hồi phục cho đồng đội, sau khi hồi phục sẽ giúp đồng đội tăng khả năng né tránh: +# duy trì 5 giây"
+  },
+  {
+    "id": 29,
+    "name": "Tăng % kinh nghiệm khi đánh quái: +#%"
+  },
+  {
+    "id": 30,
+    "name": "Khi Mp lớn hơn 10%, dùng MP hút sát thương: +#% duy trì 90 giây"
+  },
+  {
+    "id": 31,
+    "name": "Né tránh hoàn toàn tấn công: +#%"
+  },
+  {
+    "id": 32,
+    "name": "Hạ khắc: +#"
+  },
+  {
+    "id": 33,
+    "name": "Tương khắc: +#"
+  },
+  {
+    "id": 34,
+    "name": "Xác xuất gây bỏng: +#% duy trì 4 giây"
+  },
+  {
+    "id": 35,
+    "name": "Xác xuất đóng băng: +#% duy trì 3 giây"
+  },
+  {
+    "id": 36,
+    "name": "Xác xuất gây choáng: +#% duy trì 2 giây"
+  },
+  {
+    "id": 37,
+    "name": "Giảm thời gian bị bỏng: -0.# giây"
+  },
+  {
+    "id": 38,
+    "name": "Giảm thời gian bị đóng băng: -0.# giây"
+  },
+  {
+    "id": 39,
+    "name": "Giảm thời gian bị choáng: -0.# giây"
+  },
+  {
+    "id": 40,
+    "name": "Giảm 3 giây thời gian bị bỏng: duy trì # giây"
+  },
+  {
+    "id": 41,
+    "name": "Giảm 2 giây thời gian bị đóng băng: duy trì # giây"
+  },
+  {
+    "id": 42,
+    "name": "Giảm 1 giây thời gian bị choáng: duy trì # giây"
+  },
+  {
+    "id": 43,
+    "name": "Nữa giây phục hồi HP cho đồng đội: +# duy trì 5 giây"
+  },
+  {
+    "id": 44,
+    "name": "Tăng tỉ lệ Hp cho đồng đội: +#%"
+  },
+  {
+    "id": 45,
+    "name": "Tăng kháng tất cả cho mình và đồng đội: +# duy trì 90 giây"
+  },
+  {
+    "id": 46,
+    "name": "Tăng tấn công cơ bản cho mình và đồng đội: +#% duy trì 90 giây"
+  },
+  {
+    "id": 47,
+    "name": "Giảm 2 giây thời gian bị bỏng cho đồng đội: duy trì # giây"
+  },
+  {
+    "id": 48,
+    "name": "Vô hiệu hóa tấn công của quái vật: duy trì +# giây"
+  },
+  {
+    "id": 49,
+    "name": "Tạo vật thế thân: duy trì +# giây"
+  },
+  {
+    "id": 50,
+    "name": "Biến quái thành thức ăn: tăng +#HP"
+  },
+  {
+    "id": 51,
+    "name": "Đốt Hp của quái vật dựa trên tấn công hiện tại: +#% duy trì 30 giây"
+  },
+  {
+    "id": 52,
+    "name": "Ẩn thân mỗi nữa giây phục hồi Mp, Hp: +# duy trì 5 giây"
+  },
+  {
+    "id": 53,
+    "name": "Tàng hình: duy trì # giây"
+  },
+  {
+    "id": 54,
+    "name": "Giảm 1 giây thời gian bị đóng băng cho đồng đội: duy trì # giây"
+  },
+  {
+    "id": 55,
+    "name": "Làm cho đối phương không thể di chuyển: duy trì +# giây"
+  },
+  {
+    "id": 56,
+    "name": "Mỗi nữa giây giảm trừ 3% Hp đồng thời tăng tấn công cơ bản: +#% duy trì 5 giây"
+  },
+  {
+    "id": 57,
+    "name": "Giảm 0.5 giây thời gian bị choáng cho đồng đội: duy trì # giây"
+  },
+  {
+    "id": 58,
+    "name": "Hỗ trợ tấn công chiêu cấp 30: +#%"
+  },
+  {
+    "id": 59,
+    "name": "Hỗ trợ tấn công chiêu cấp 40: +#%"
+  },
+  {
+    "id": 60,
+    "name": "Hỗ trợ tấn công chiêu cấp 50: +#%"
+  },
+  {
+    "id": 61,
+    "name": "#"
+  },
+  {
+    "id": 62,
+    "name": "# "
+  }
+]
