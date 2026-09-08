@@ -357,14 +357,6 @@ footer {
       <option value="id">Sắp theo id</option>
       <option value="ten">Sắp theo tên</option>
     </select>
-    <button class="nut" id="chep-tat" title="Chép id của mọi mục đang hiện">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="9" y="9" width="12" height="12" rx="2"/>
-        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-      </svg>
-      Chép id
-    </button>
     <span class="dem" id="dem"></span>
   </div>
 </header>
@@ -423,7 +415,7 @@ const MAC_DINH = {
 
 const T = { chiMuc: MAC_DINH, nph: "TeaMobi", sv: "Server1", muc: "vatpham", tim: "", sap: "id" };
 const kho = new Map();
-let dangHien = [];   // danh sách đang hiển thị, để nút "Chép id" và ngăn chi tiết dùng lại
+let dangHien = [];   // danh sách đang hiển thị, để ngăn chi tiết tra lại theo chỉ số
 const $ = (id) => document.getElementById(id);
 
 // ══════════ tiện ích ══════════
@@ -860,12 +852,6 @@ async function khoiDong() {
   });
 
   $("sap").addEventListener("change", (e) => { T.sap = e.target.value; ve(); });
-
-  // Chép cả loạt id đang hiện: dựng danh sách id cho tool thì cần đúng cái này.
-  $("chep-tat").addEventListener("click", () => {
-    if (!dangHien.length) return banh("Không có gì để chép");
-    chepChu(dangHien.map(idCua).join(","), `Đã chép ${dangHien.length} id`);
-  });
 
   // Chip chép bắt ở tầng document: chúng có mặt cả trong thẻ lẫn trong ngăn chi tiết, gắn
   // riêng từng chỗ là kiểu gì cũng quên một chỗ.
