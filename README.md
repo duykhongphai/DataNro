@@ -14,6 +14,13 @@ https://raw.githubusercontent.com/duykhongphai/DataNro/main/TeaMobi/Server1/Item
 https://raw.githubusercontent.com/duykhongphai/DataNro/main/TeaMobi/Icons/0/410.png
 ```
 
+Ngoài ra:
+
+```
+TeaMobi/Mobs/0.png            tấm sprite của mẫu quái 0
+TeaMobi/Mobs/MobFrames.json   bảng ô cắt + bảng khung của mọi mẫu quái
+```
+
 Bố cục: `Nhà phát hành / Máy chủ / Loại dữ liệu`. Ảnh nằm ở
 `Nhà phát hành / Icons / <id chia 1000> / <id>.png` — dùng chung cho mọi máy chủ cùng nhà phát
 hành. Ví dụ id 410 ở `TeaMobi/Icons/0/410.png`, id 17529 ở `TeaMobi/Icons/17/17529.png`.
@@ -95,7 +102,7 @@ máy chủ gửi — cũng là chỗ duy nhất còn tên của mấy lớp th�
 
 - **Không phải id ảnh nào cũng có ảnh.** Khoảng 96% id lấy được; số còn lại máy chủ thật sự
   không có — hỏi lại ba lần ở ba phiên khác nhau vẫn không thấy trả lời.
-- Ảnh quái và ảnh nền map **không có** — chúng không lấy được qua đường này.
+- Ảnh nền map **không có** — không lấy được qua đường này.
 - Ba tệp `LinkMapsXmap.txt`, `GroupMapsXmap.txt`, `AutoLinkMapsWaypoint.txt` là đồ thị liên kết
   map, **chép tay** từ mod Dragonboy, không do máy chủ gửi nên không tự cập nhật.
 - API miễn phí, đừng dùng vào việc lừa đảo hay kiếm tiền trên công sức người khác.
@@ -134,6 +141,8 @@ dotnet run --project HeadlessClient/DataNro.HeadlessClient -- \
 | `--proxy` | `NRO_PROXY` | `socks5://user:pass@host:port` |
 | `--ra` | `NRO_RA` | Thư mục ghi ra, mặc định `out` |
 | `--khong-anh` | | Chỉ lấy JSON, bỏ qua ảnh |
+| `--khong-quai` | | Bỏ qua tải sprite quái |
+| `--lo-anh` / `--lo-quai` | | Mỗi lượt hỏi tối đa bao nhiêu cái |
 | `--khong-vao-map` | | Không vào game (mất `Parts.json`) |
 | `--cho-part` | | Chờ bảng part bao lâu sau khi vào map, mặc định 60000 ms |
 | `--nhip-anh` | | Cách nhau bao lâu giữa hai lần hỏi ảnh (ms) |
@@ -144,6 +153,54 @@ dotnet run --project HeadlessClient/DataNro.HeadlessClient -- \
 | `--lan-dang-nhap` | | Thử đăng nhập mấy lần trước khi chịu thua, mặc định 4 |
 
 Mã thoát: `0` xong, `1` không lấy đủ dữ liệu, `2` cấu hình sai, `3` không thấy máy chủ.
+
+### Vẽ NPC và quái
+
+Đây là chỗ dễ hiểu sai nhất, nên nói rõ.
+
+**NPC ghép từ ba mảnh.** `headId` / `bodyId` / `legId` **không phải id ảnh** mà là chỉ số vào
+`Parts.json`. Mỗi part là một loạt khung `{id ảnh, dx, dy}`, và bảng tư thế của client chọn
+khung nào cùng độ lệch. Công thức (Npc.cs của bản giải nén):
+
+```
+vẽ đầu, rồi chân, rồi thân — thân sau cùng nên đè lên trên
+x = tuThe[k][1] + khung.dx
+y = -tuThe[k][2] + khung.dy        (dấu TRỪ ở dy của tư thế)
+```
+
+Thứ tự mục trong bảng tư thế là **đầu / chân / thân**, còn ba id của NPC là **đầu / thân /
+chân** — lệch nhau nên rất dễ ghép nhầm. Bảng tư thế là hằng nằm trong client (33 tư thế),
+`index.html` chép sẵn; NPC đứng yên dùng tư thế 0.
+
+**Quái thì mỗi con một tấm sprite riêng**, không ghép từ part. `MobFrames.json` cho biết cắt
+tấm ấy ở đâu:
+
+```jsonc
+{ "mobTemplateId": 0, "width": 24, "height": 32,
+  "rects":  [{ "id": 0, "x": 0, "y": 0, "w": 24, "h": 32 }],   // ô cắt trên tấm png
+  "frames": [[{ "dx": 0, "dy": 0, "o": 0 }]],                   // mỗi khung là mấy mảnh
+  "anim":   [0, 1, 2] }                                         // chuỗi hoạt ảnh
+```
+
+**Mọi con số toạ độ đều là đơn vị game.** Client nhân cả toạ độ đích lẫn ô cắt với mức phóng
+(`mGraphics.drawRegion`), mà ảnh ở đây xin ở mức 4 — nên nhân tất cả với 4 rồi mới vẽ. Quên
+chỗ này thì hình ra đúng hình dạng nhưng các mảnh rời nhau ra.
+
+Ba chỗ lệch chuẩn, đều nằm ở mấy con boss:
+
+- **Đuôi hoạt ảnh có con đếm bằng một byte** thay vì `short` (Godzilla, Kong). Client đọc bằng
+  `readShort` rồi bọc cả hàm trong `catch` rỗng, nên nó lặng lẽ **bỏ luôn hoạt ảnh** của những
+  con này. Ở đây thì thử cách đọc nào ăn khớp trọn vẹn số byte còn lại.
+- **`"autoSize": true`** nghĩa là máy chủ gửi tệp nguồn dạng chữ (`==== SMALLIMAGES ====` /
+  `FRAMES` / `SEQUENCE`) chứ không phải gói nhị phân — Hirudegarn là một ví dụ. Bảng ô trong đó
+  **chỉ có toạ độ góc**, rộng/cao là do công cụ này tự dò từ vùng đục của tấm PNG nên có thể
+  lệch vài điểm ảnh. Client gặp định dạng này thì tràn mảng ngay từ byte đầu và không vẽ được
+  gì cả.
+- Tấm sprite của những con `autoSize` là **ảnh gốc chưa phóng**: một đơn vị game bằng đúng một
+  điểm ảnh, **không nhân 4**.
+
+Bốn mẫu quái (`28`, `29`, `30`, `85`) thì máy chủ không trả lời gói xin hình, nên không có
+tấm sprite nào cả.
 
 ### Ảnh: máy chủ chỉ cho khoảng một trăm mỗi phiên
 

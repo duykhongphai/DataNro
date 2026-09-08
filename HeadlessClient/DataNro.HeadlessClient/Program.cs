@@ -86,6 +86,7 @@ public static class Program
         Console.WriteLine("  " + phien.Data);
 
         if (c.TaiAnh) await TaiAnhAsync(phien, c);
+        if (c.TaiQuai) await TaiQuaiAsync(phien, c);
 
         phien.Ngat();
         return 0;
@@ -222,9 +223,12 @@ public static class Program
             }
         }
 
-        var coTrenDia = BoAnh.DaCoTrenDia(thuMucAnh).Count;
-        var thieu = tatCa.Count - coTrenDia;
-        Console.WriteLine($"  ảnh: {coTrenDia}/{tatCa.Count} tệp (lần chạy này thêm {tongNhan}). " +
+        // Đếm theo danh sách CẦN chứ không theo số tệp ngoài đĩa: đĩa còn giữ cả ảnh của
+        // những lần chạy trước không còn ai tham chiếu, lấy hiệu hai số ra âm ngay.
+        var coTrenDia = BoAnh.DaCoTrenDia(thuMucAnh);
+        var thieu = tatCa.Count(id => !coTrenDia.Contains(id));
+        Console.WriteLine($"  ảnh: {tatCa.Count - thieu}/{tatCa.Count} id có ảnh " +
+                          $"(lần chạy này thêm {tongNhan}, trên đĩa tổng cộng {coTrenDia.Count} tệp). " +
                           $"Thiếu {thieu}: {boCuoc} id hỏi {c.SoLanHoiLaiAnh} lần không thấy trả lời, " +
                           $"{hang.Count} id còn trong hàng → {Path.GetFullPath(thuMucAnh)}");
 
@@ -232,6 +236,91 @@ public static class Program
         // không phải vì đã hỏi xong. Nói rõ ra để lần chạy sau biết mà xin nốt.
         if (hang.Count > 0)
             Console.WriteLine("  ảnh: CHƯA hỏi hết - chạy lại lần nữa sẽ xin tiếp phần còn thiếu.");
+    }
+
+    /// <summary>
+    /// Xin hình từng mẫu quái (gói <c>11</c>) rồi ghi tấm sprite ra
+    /// <c>&lt;ra&gt;/&lt;nhà phát hành&gt;/Mobs/&lt;id&gt;.png</c> kèm bảng khung
+    /// <c>MobFrames.json</c>.
+    /// </summary>
+    private static async Task TaiQuaiAsync(Phien phien, CauHinh c)
+    {
+        var thuMucQuai = Path.Combine(c.Ra, c.NhaPhatHanh, "Mobs");
+        var tatCa = Enumerable.Range(0, phien.Data.arrMobTemplate.Length).ToList();
+        if (tatCa.Count == 0) return;
+
+        var daCo = BoQuai.DaCoTrenDia(thuMucQuai);
+        var hang = new Queue<(int id, int soLan)>(
+            tatCa.Where(id => !daCo.Contains(id)).Select(id => (id, 0)));
+
+        Console.WriteLine($"Tải hình quái: {tatCa.Count} mẫu, đã có sẵn {daCo.Count}, cần hỏi {hang.Count}");
+        if (hang.Count == 0) return;
+
+        using var het = new CancellationTokenSource(c.ChoQuaiMs);
+        var bo = new BoQuai(phien, thuMucQuai);
+        var boCuoc = 0;
+
+        for (var luot = 1; luot <= c.SoLuotAnh && hang.Count > 0; luot++)
+        {
+            if (het.IsCancellationRequested) break;
+
+            if (!phien.DaNoi && !await phien.DangNhapCoThuLaiAsync(c.Host, c.Port, c.TaiKhoan,
+                    c.MatKhau, c.ChoDangNhapMs, c.SoLanDangNhap, c.NghiGiuaLuotMs, het.Token))
+            {
+                Console.WriteLine("  quái: nối lại không được, dừng.");
+                break;
+            }
+
+            // Đăng nhập xong CHƯA phải là đã vào map. Đo thực tế: lượt đầu (còn nguyên phiên
+            // đã vào map từ lúc lấy dữ liệu) trả lời 37/40, lượt sau vừa nối lại đã hỏi ngay
+            // thì trả lời 0/40 - máy chủ chỉ phục vụ gói này khi nhân vật đứng trong map.
+            if (!await phien.ChoVaoMapAsync(c.ChoPartMs, het.Token))
+            {
+                Console.WriteLine("  quái: chưa vào được map, dừng.");
+                break;
+            }
+
+            var lo = new List<(int id, int soLan)>();
+            while (lo.Count < c.SoQuaiMoiLuot && hang.Count > 0) lo.Add(hang.Dequeue());
+
+            var chuaRo = new HashSet<int>(
+                await bo.MotLuotAsync(lo.Select(x => x.id).ToList(), c.NhipQuaiMs, c.LangAnhMs, het.Token));
+
+            var boLuotNay = 0;
+            foreach (var (id, soLan) in lo)
+            {
+                if (!chuaRo.Contains(id)) continue;
+                if (soLan + 1 >= c.SoLanHoiLaiAnh)
+                {
+                    boLuotNay++;
+                    boCuoc++;
+                }
+                else
+                {
+                    hang.Enqueue((id, soLan + 1));
+                }
+            }
+
+            bo.GhiBang();
+            Console.WriteLine($"  lượt {luot}: hỏi {lo.Count}, trả lời {lo.Count - chuaRo.Count}, " +
+                              $"hỏi lại {chuaRo.Count - boLuotNay}, bỏ {boLuotNay}, còn {hang.Count}");
+
+            if (hang.Count == 0) break;
+
+            phien.Ngat();
+            try
+            {
+                await Task.Delay(c.NghiGiuaLuotMs, het.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+        }
+
+        var co = BoQuai.DaCoTrenDia(thuMucQuai).Count;
+        Console.WriteLine($"  quái: {co}/{tatCa.Count} tấm sprite (bỏ {boCuoc}, còn trong hàng " +
+                          $"{hang.Count}) → {Path.GetFullPath(thuMucQuai)}");
     }
 
     private static async Task<ServerInfo> TimMayChuAsync(string ten)

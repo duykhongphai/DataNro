@@ -1,4 +1,4 @@
-using DataNro.Mang;
+﻿using DataNro.Mang;
 
 namespace DataNro.GiaoThuc;
 
@@ -55,11 +55,16 @@ public sealed class BoDocGoi : IBoDoc
     public string LoiDangNhap { get; private set; }
 
     /// <summary>
-    /// Đã báo máy chủ "client sẵn sàng" - tức là phiên này thật sự dùng được (xin ảnh được).
-    /// Đây mới là mốc để bên ngoài biết đăng nhập xong, chứ không phải <see cref="GameData.DaDayDu"/>:
-    /// bảng dữ liệu còn nguyên từ lần nối trước nên nó luôn đúng, kể cả khi phiên mới chưa vào.
+    /// Phiên này thật sự dùng được: máy chủ đã nhận đăng nhập <b>và</b> ta đã báo client sẵn
+    /// sàng. Phải có cả hai.
+    ///
+    /// <para>
+    /// Chỉ xét vế "đã báo sẵn sàng" thì hụt: nối lại xong máy chủ tự đẩy bảng vật phẩm (gói
+    /// 12) mà không cần ai hỏi, bảng ấy làm <c>AllLoaded</c> đúng ngay lập tức nên ta báo sẵn
+    /// sàng và bên ngoài tưởng đã đăng nhập xong - trong khi máy chủ còn chưa nhận tài khoản.
+    /// </para>
     /// </summary>
-    public bool DaSanSang { get; private set; }
+    public bool DaSanSang => DaDangNhap && daBaoSanSang;
 
     /// <summary>Gói ảnh (-67) đi thẳng ra ngoài cho bộ tải ảnh, ở đây không đụng vào.</summary>
     public event Action<Message> NhanAnh;
@@ -74,7 +79,6 @@ public sealed class BoDocGoi : IBoDoc
     public void DatLai()
     {
         DaDangNhap = false;
-        DaSanSang = false;
         LoiDangNhap = null;
         daGuiLai = false;
         daBaoSanSang = false;
@@ -130,6 +134,9 @@ public sealed class BoDocGoi : IBoDoc
             case -67:
                 NhanAnh?.Invoke(msg);
                 break;
+            case 11:
+                NhanHinhQuai(msg);
+                break;
             case 42:
                 // Máy chủ hỏi bảng "cập nhật thông tin". Không trả lời là nó ngừng đẩy dữ
                 // liệu, nên cứ trả lời cho xong - nội dung câu hỏi không cần đọc.
@@ -156,6 +163,9 @@ public sealed class BoDocGoi : IBoDoc
 
     private bool daVaoMap;
     private int soLanTaoNhanVat;
+
+    /// <summary>Nhân vật đã đứng trong map chưa. Gói xin hình quái chỉ được phục vụ khi đã vào.</summary>
+    public bool DaVaoMap => daVaoMap;
 
     /// <summary>
     /// Máy chủ trả danh sách nhân vật (gói <c>0</c>): chọn ngay nhân vật đầu để vào game.
@@ -358,7 +368,6 @@ public sealed class BoDocGoi : IBoDoc
         Gui(NotMap(13));
         Gui(NotMap(13));
         Gui(new Message((sbyte)-38));
-        DaSanSang = true;
     }
 
     // ==================== gói gửi đi ====================
@@ -424,6 +433,70 @@ public sealed class BoDocGoi : IBoDoc
         w.writeUTF(string.Empty);
         w.writeUTF("0968" + Random.Shared.Next(0, 1000000).ToString("D6"));
         w.writeUTF("Nguyễn Văn A");
+        Gui(m);
+    }
+
+    /// <summary>Hình một mẫu quái vừa về.</summary>
+    public event Action<HinhQuai> NhanQuai;
+
+    /// <summary>
+    /// Gói <c>11</c>: hình của một mẫu quái. Bố cục nguyên bản
+    /// <c>Controller</c> nhánh 11:
+    /// <c>short id, byte kiểuĐọc, mảng dữ liệu khung, mảng PNG, byte typeData</c>.
+    /// </summary>
+    private void NhanHinhQuai(Message msg)
+    {
+        var id = -1;
+        try
+        {
+            var r = msg.reader();
+            id = r.readShort();
+            var q = new HinhQuai { mobTemplateId = id };
+            var kieu = r.readByte();
+
+            // Đọc trọn hai khối byte trước rồi mới phân tích: bảng khung của vài con boss có
+            // bố cục lạ, phân tích ngay tại đây mà vỡ là mất luôn tấm PNG nằm ngay sau nó.
+            var khung = DocMangByte(r);
+            var png = DocMangByte(r);
+            if (khung == null) return;
+
+            if (png != null)
+            {
+                q.anh = new byte[png.Length];
+                for (var i = 0; i < png.Length; i++) q.anh[i] = unchecked((byte)png[i]);
+            }
+
+            try
+            {
+                q.typeData = r.readByte();
+            }
+            catch (Exception)
+            {
+                // máy chủ cũ không gửi trường này
+            }
+
+            try
+            {
+                q.Doc(khung, kieu);
+            }
+            catch (Exception e)
+            {
+                log?.Invoke($"Bảng khung quái {id} (kiểu {kieu}) đọc hỏng: {e.Message}");
+            }
+
+            NhanQuai?.Invoke(q);
+        }
+        catch (Exception e)
+        {
+            log?.Invoke($"Đọc hình quái {id} hỏng: {e.Message}");
+        }
+    }
+
+    /// <summary>Xin hình của một mẫu quái.</summary>
+    public void XinHinhQuai(int mobTemplateId)
+    {
+        var m = new Message((sbyte)11);
+        m.writer().writeShort(mobTemplateId);
         Gui(m);
     }
 

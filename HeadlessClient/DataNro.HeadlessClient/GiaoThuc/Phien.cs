@@ -113,6 +113,29 @@ public sealed class Phien : IDisposable
         return false;
     }
 
+    /// <summary>
+    /// Chờ tới khi nhân vật thật sự đứng trong map. Đăng nhập xong chưa có nghĩa là đã vào:
+    /// còn phải chọn (hoặc tạo) nhân vật, đợi máy chủ đẩy thông tin map rồi mới báo sẵn sàng.
+    /// Gói xin hình quái mà gửi trước lúc đó thì máy chủ lặng thinh.
+    /// </summary>
+    public async Task<bool> ChoVaoMapAsync(int hetGioMs, CancellationToken ct)
+    {
+        var han = Environment.TickCount64 + hetGioMs;
+        while (!Doc.DaVaoMap && Environment.TickCount64 < han && DaNoi && !ct.IsCancellationRequested)
+        {
+            try
+            {
+                await Task.Delay(200, ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
+        }
+
+        return Doc.DaVaoMap;
+    }
+
     public void Ngat()
     {
         try { nhipCts?.Cancel(); } catch (Exception) { }

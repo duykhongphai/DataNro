@@ -153,12 +153,21 @@ public sealed class BoAnh
     }
 
     /// <summary>
-    /// Mọi id ảnh đáng hỏi, đã lọc trùng và xếp tăng dần.
+    /// Mọi id ảnh đáng hỏi, đã lọc trùng và xếp tăng dần. Gói <c>-67</c> chỉ nhận đúng một
+    /// con số - phía máy chủ ảnh vật phẩm, ảnh kĩ năng và ảnh mảnh dựng hình nằm chung một
+    /// bảng, nên gộp cả ba nguồn vào một kho.
     ///
     /// <para>
-    /// Gộp cả ba nguồn vào một kho vì gói <c>-67</c> chỉ nhận đúng một con số, không phân
-    /// biệt "ảnh vật phẩm" hay "ảnh part": phía máy chủ tất cả nằm chung một bảng ảnh nhỏ.
-    /// Nhờ vậy hỏi part của NPC là ra luôn hình NPC, không phải dựng lại sprite.
+    /// Chỗ dễ sai nhất: <c>headId/bodyId/legId</c> của NPC <b>không phải id ảnh</b> mà là chỉ
+    /// số vào bảng part; id ảnh nằm trong từng khung của part đó. Trước đây lấy thẳng ba số
+    /// ấy làm id ảnh nên tải về toàn ảnh của người khác, còn ảnh thật của NPC thì không có -
+    /// Ông Gôhan cần ảnh 250/251/252 mà ta lại đi tải 18/19/20.
+    /// </para>
+    ///
+    /// <para>
+    /// Chỉ gom part mà NPC dùng tới, không gom cả bảng: cả bảng có 13969 ảnh (đủ mọi bộ đồ,
+    /// mọi kiểu tóc của người chơi) - hơn một trăm lượt đăng nhập lại, mà trang không dùng.
+    /// Riêng part của NPC chỉ thêm bảy trăm ảnh.
     /// </para>
     /// </summary>
     public static List<int> GomId(GameData d)
@@ -175,12 +184,23 @@ public sealed class BoAnh
         foreach (var npc in d.arrNpcTemplate)
         {
             if (npc == null) continue;
-            if (npc.headId > 0) set.Add(npc.headId);
-            if (npc.bodyId > 0) set.Add(npc.bodyId);
-            if (npc.legId > 0) set.Add(npc.legId);
+            ThemAnhCuaPart(d, npc.headId, set);
+            ThemAnhCuaPart(d, npc.bodyId, set);
+            ThemAnhCuaPart(d, npc.legId, set);
         }
 
         return set.ToList();
+    }
+
+    /// <summary>Mọi id ảnh trong một part. Chưa có bảng part thì không thêm gì.</summary>
+    private static void ThemAnhCuaPart(GameData d, int chiSo, SortedSet<int> set)
+    {
+        if (chiSo < 0 || chiSo >= d.parts.Length) return;
+        var p = d.parts[chiSo];
+        if (p?.pi == null) return;
+
+        foreach (var k in p.pi)
+            if (k.id > 0) set.Add(k.id);
     }
 
     /// <summary>

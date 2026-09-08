@@ -39,7 +39,8 @@ public static class BoXuat
         GhiTep(thuMuc, "NpcTemplates.json", Npcs(d));
         GhiTep(thuMuc, "NClasses.json", Classes(d, clientType));
         GhiTep(thuMuc, "SkillOptionTemplates.json", SkillOptions(d));
-        if (d.parts.Length > 0) GhiTep(thuMuc, "Parts.json", Parts(d));
+        // Bảng part in thụt lề thì phình lên 1,7 MB mà chẳng ai đọc bằng mắt - ghi gọn.
+        if (d.parts.Length > 0) GhiTep(thuMuc, "Parts.json", Parts(d), gon: true);
 
         // Mốc thời gian không có xuống dòng cuối, đúng như bản của DataNRO.
         File.WriteAllText(Path.Combine(thuMuc, "LastUpdated"),
@@ -56,10 +57,11 @@ public static class BoXuat
         return thuMuc;
     }
 
-    private static void GhiTep<T>(string thuMuc, string ten, T noiDung)
+    /// <param name="gon">Ghi một dòng thay vì thụt lề - dành cho bảng to mà không ai đọc mắt.</param>
+    private static void GhiTep<T>(string thuMuc, string ten, T noiDung, bool gon = false)
     {
         var duong = Path.Combine(thuMuc, ten);
-        File.WriteAllText(duong, JsonSerializer.Serialize(noiDung, Dep) + "\n");
+        File.WriteAllText(duong, JsonSerializer.Serialize(noiDung, gon ? Gon : Dep) + "\n");
     }
 
     // ==================== chuyển đổi ====================

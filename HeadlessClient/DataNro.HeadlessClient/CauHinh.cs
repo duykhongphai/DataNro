@@ -55,6 +55,21 @@ public class CauHinh
     /// </summary>
     public bool VaoMap { get; set; } = true;
 
+    /// <summary>Tải luôn hình sprite của từng mẫu quái.</summary>
+    public bool TaiQuai { get; set; } = true;
+
+    /// <summary>Mỗi lượt hỏi tối đa bao nhiêu mẫu quái.</summary>
+    public int SoQuaiMoiLuot { get; set; } = 40;
+
+    /// <summary>
+    /// Cách nhau bao lâu giữa hai lần hỏi quái. Chậm hơn hỏi ảnh vì mỗi gói trả về kèm cả
+    /// một tấm sprite, nặng hơn hẳn một cái icon.
+    /// </summary>
+    public int NhipQuaiMs { get; set; } = 150;
+
+    /// <summary>Hết giờ cho cả việc tải hình quái.</summary>
+    public int ChoQuaiMs { get; set; } = 900000;
+
     /// <summary>Tải luôn ảnh icon sau khi có bảng dữ liệu.</summary>
     public bool TaiAnh { get; set; } = true;
 
@@ -153,6 +168,9 @@ public class CauHinh
                 case "--cho-part": if (int.TryParse(KeTiep(), out var cp)) c.ChoPartMs = cp; break;
                 case "--khong-vao-map": c.VaoMap = false; break;
                 case "--khong-anh": c.TaiAnh = false; break;
+                case "--khong-quai": c.TaiQuai = false; break;
+                case "--lo-quai": if (int.TryParse(KeTiep(), out var lq)) c.SoQuaiMoiLuot = lq; break;
+                case "--nhip-quai": if (int.TryParse(KeTiep(), out var nq)) c.NhipQuaiMs = nq; break;
                 case "--nhip-anh": if (int.TryParse(KeTiep(), out var na)) c.NhipAnhMs = na; break;
                 case "--lang-anh": if (int.TryParse(KeTiep(), out var la)) c.LangAnhMs = la; break;
                 case "--cho-anh": if (int.TryParse(KeTiep(), out var ca)) c.ChoAnhMs = ca; break;
