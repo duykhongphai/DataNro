@@ -80,6 +80,17 @@ public class CauHinh
     /// <summary>Mỗi lượt hỏi tối đa bao nhiêu hiệu ứng.</summary>
     public int SoHieuUngMoiLuot { get; set; } = 40;
 
+    /// <summary>
+    /// Ghép sẵn hình NPC / quái / hiệu ứng sau khi đổ dữ liệu.
+    ///
+    /// <para>
+    /// Tắt cho những máy chủ đi sau: ảnh, hình quái và hiệu ứng đều dùng chung cho cả nhà phát
+    /// hành và chỉ máy chủ đầu mới tải về, nên mấy máy sau ghép lại đúng từng ấy tệp y hệt -
+    /// mỗi lượt ngót nửa phút, mười tám máy là mất toi mươi phút của cả job.
+    /// </para>
+    /// </summary>
+    public bool GhepHinh { get; set; } = true;
+
     /// <summary>Xin luôn bố cục ô của từng map (gói -28 nhánh 10).</summary>
     public bool TaiMap { get; set; } = true;
 
@@ -241,6 +252,7 @@ public class CauHinh
                 case "--khong-anh": c.TaiAnh = false; break;
                 case "--khong-quai": c.TaiQuai = false; break;
                 case "--khong-map": c.TaiMap = false; break;
+                case "--khong-ghep": c.GhepHinh = false; break;
                 case "--id-hieu-ung-toi-da": if (int.TryParse(KeTiep(), out var ih)) c.IdHieuUngToiDa = ih; break;
                 case "--nhip-map": if (int.TryParse(KeTiep(), out var nm)) c.NhipMapMs = nm; break;
                 case "--lo-quai": if (int.TryParse(KeTiep(), out var lq)) c.SoQuaiMoiLuot = lq; break;

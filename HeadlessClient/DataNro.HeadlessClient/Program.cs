@@ -98,16 +98,19 @@ public static class Program
 
         // Ghép sẵn hình NPC với hình quái: để trang tự ghép thì một trang NPC phải tải hơn hai
         // trăm sáu mươi ảnh rời, còn mỗi con quái kéo về nguyên tấm sprite chỉ để lấy một khung.
-        try
+        if (c.GhepHinh)
         {
-            var soNpc = BoGhepHinh.GhepNpc(phien.Data, thuMucNph);
-            var soQuai = BoGhepHinh.GhepQuai(thuMucNph);
-            var soEff = BoGhepHinh.GhepHieuUng(thuMucNph);
-            Console.WriteLine($"Ghép sẵn hình: {soNpc} NPC, {soQuai} quái, {soEff} hiệu ứng");
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine("Ghép hình hỏng: " + e.Message);
+            try
+            {
+                var soNpc = BoGhepHinh.GhepNpc(phien.Data, thuMucNph);
+                var soQuai = BoGhepHinh.GhepQuai(thuMucNph);
+                var soEff = BoGhepHinh.GhepHieuUng(thuMucNph);
+                Console.WriteLine($"Ghép sẵn hình: {soNpc} NPC, {soQuai} quái, {soEff} hiệu ứng");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Ghép hình hỏng: " + e.Message);
+            }
         }
 
         phien.Ngat();

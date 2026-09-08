@@ -127,7 +127,8 @@ jobs:
             if [ "$con_anh" = 1 ] && [ "${BO_QUA_ANH:-}" != "true" ]; then
               co_anh=""
             else
-              co_anh="--khong-anh"
+              # Máy chủ đi sau không tải gì mới nên cũng khỏi ghép lại hình.
+              co_anh="--khong-anh --khong-ghep"
             fi
 
             # timeout là hàng rào cứng cuối cùng: client đã tự có hạn giờ cho từng bước, nhưng
