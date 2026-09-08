@@ -39,6 +39,7 @@ public static class BoXuat
         GhiTep(thuMuc, "NpcTemplates.json", Npcs(d));
         GhiTep(thuMuc, "NClasses.json", Classes(d, clientType));
         GhiTep(thuMuc, "SkillOptionTemplates.json", SkillOptions(d));
+        if (d.parts.Length > 0) GhiTep(thuMuc, "Parts.json", Parts(d));
 
         // Mốc thời gian không có xuống dòng cuối, đúng như bản của DataNRO.
         File.WriteAllText(Path.Combine(thuMuc, "LastUpdated"),
@@ -156,6 +157,16 @@ public static class BoXuat
                         MoreInfo = sk.moreInfo
                     }).ToArray()
                 }).ToArray()
+            })
+            .ToList();
+
+    private static List<PartRa> Parts(GameData d) =>
+        d.parts
+            .Where(p => p != null)
+            .Select(p => new PartRa
+            {
+                Type = p.type,
+                Pi = p.pi.Select(x => new PartImageRa { Id = x.id, Dx = x.dx, Dy = x.dy }).ToArray()
             })
             .ToList();
 

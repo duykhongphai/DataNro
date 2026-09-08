@@ -1,4 +1,4 @@
-namespace DataNro.GiaoThuc;
+﻿namespace DataNro.GiaoThuc;
 
 /// <summary>
 /// Bảng mẫu vật phẩm. Đọc từ gói UPDATE_ITEM (messageNotMap sub 8 / cmd 12 sub 0),
@@ -118,4 +118,33 @@ public class NClass
     public SkillTemplate[] skillTemplates = Array.Empty<SkillTemplate>();
 
     public override string ToString() => $"[{classId}] {name}";
+}
+
+/// <summary>Một khung của part: ảnh nào, lệch bao nhiêu so với gốc.</summary>
+public class PartImage
+{
+    public short id;
+    public sbyte dx;
+    public sbyte dy;
+}
+
+/// <summary>
+/// Một mảnh dựng hình nhân vật / NPC (đầu, thân, chân). Mỗi part gồm nhiều khung ứng với
+/// từng tư thế; <c>type</c> quyết định có bao nhiêu khung - đúng như <c>Part(int type)</c>
+/// của client gốc.
+/// </summary>
+public class Part
+{
+    public int type;
+    public PartImage[] pi = Array.Empty<PartImage>();
+
+    /// <summary>Số khung theo loại part. Loại lạ thì trả 0 và bên đọc phải dừng lại.</summary>
+    public static int SoKhung(int type) => type switch
+    {
+        0 => 3,
+        1 => 17,
+        2 => 14,
+        3 => 2,
+        _ => 0
+    };
 }

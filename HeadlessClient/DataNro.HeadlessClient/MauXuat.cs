@@ -130,3 +130,17 @@ public class SkillOptionTemplateRa
     [JsonPropertyName("id")] public int Id { get; set; }
     [JsonPropertyName("name")] public string Name { get; set; }
 }
+
+/// <summary>Một khung của part. Chép đúng định dạng <c>Parts.json</c> của DataNRO.</summary>
+public class PartImageRa
+{
+    [JsonPropertyName("id")] public short Id { get; set; }
+    [JsonPropertyName("dx")] public sbyte Dx { get; set; }
+    [JsonPropertyName("dy")] public sbyte Dy { get; set; }
+}
+
+public class PartRa
+{
+    [JsonPropertyName("type")] public int Type { get; set; }
+    [JsonPropertyName("pi")] public PartImageRa[] Pi { get; set; }
+}

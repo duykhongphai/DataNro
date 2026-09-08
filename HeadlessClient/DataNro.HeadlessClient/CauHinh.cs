@@ -43,6 +43,18 @@ public class CauHinh
     /// Tính cả các lần thử lại, nên rộng hơn <see cref="ChoDangNhapMs"/> nhiều lần.
     public int ChoDuLieuMs { get; set; } = 300000;
 
+    /// <summary>
+    /// Chờ bảng mảnh dựng hình bao lâu. Nó chỉ về sau khi nhân vật đã vào map, mà trước đó
+    /// còn phải chọn hoặc tạo nhân vật nên lâu hơn mấy bảng kia nhiều.
+    /// </summary>
+    public int ChoPartMs { get; set; } = 60000;
+
+    /// <summary>
+    /// Vào hẳn trong game (chọn nhân vật, hoặc tạo nếu máy chủ chưa có) để lấy bảng mảnh
+    /// dựng hình. Tắt thì dừng ở bước đăng nhập như trước và không có <c>Parts.json</c>.
+    /// </summary>
+    public bool VaoMap { get; set; } = true;
+
     /// <summary>Tải luôn ảnh icon sau khi có bảng dữ liệu.</summary>
     public bool TaiAnh { get; set; } = true;
 
@@ -138,6 +150,8 @@ public class CauHinh
                 case "--ra": c.Ra = KeTiep(); break;
                 case "--khong-map-goc": c.GhiMapJsonGoc = false; break;
                 case "--cho": if (int.TryParse(KeTiep(), out var t)) c.ChoDuLieuMs = t; break;
+                case "--cho-part": if (int.TryParse(KeTiep(), out var cp)) c.ChoPartMs = cp; break;
+                case "--khong-vao-map": c.VaoMap = false; break;
                 case "--khong-anh": c.TaiAnh = false; break;
                 case "--nhip-anh": if (int.TryParse(KeTiep(), out var na)) c.NhipAnhMs = na; break;
                 case "--lang-anh": if (int.TryParse(KeTiep(), out var la)) c.LangAnhMs = la; break;

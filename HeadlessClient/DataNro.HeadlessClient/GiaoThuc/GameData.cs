@@ -29,6 +29,12 @@ public class GameData
 
     public string[] mapNames = Array.Empty<string>();
 
+    /// <summary>
+    /// Bảng mảnh dựng hình. <c>NpcTemplate.headId/bodyId/legId</c> là chỉ số vào bảng này,
+    /// <b>không phải</b> id ảnh - thiếu nó thì không ghép được hình NPC.
+    /// </summary>
+    public Part[] parts = Array.Empty<Part>();
+
     public void AddItem(ItemTemplate t) => itemTemplates[t.id] = t;
 
     /// <summary>Đã nhận đủ bốn nhóm dữ liệu chưa - điều kiện gửi CLIENT_OK.</summary>

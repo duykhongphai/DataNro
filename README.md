@@ -39,6 +39,7 @@ chạy, chỉ là mở trên web thì nhìn như mất bớt.
 | `NpcTemplates.json` | NPC: tên, ba part dựng hình, menu |
 | `NClasses.json` | lớp nhân vật → chiêu → từng cấp (sức mạnh, sát thương, ki, hồi chiêu, giá học) |
 | `SkillOptionTemplates.json` | tên các option của kĩ năng |
+| `Parts.json` | mảnh dựng hình nhân vật / NPC: mỗi part một loạt khung `{id ảnh, dx, dy}` |
 | `LastUpdated` | mốc cập nhật, dạng ISO 8601 |
 
 Định dạng chép theo [DataNRO của ElectroHeavenVN][ehvn] để ai đang đọc dữ liệu của họ đổi
@@ -105,10 +106,16 @@ máy chủ gửi — cũng là chỗ duy nhất còn tên của mấy lớp th�
 việc này. Nó đăng nhập, hứng bốn bảng mẫu máy chủ gửi trong lúc bắt tay, xin ảnh icon, ghi ra
 tệp rồi thoát.
 
-Cố ý **không vào map**: máy chủ gửi đủ data / map / skill / item ngay trong lúc đăng nhập,
-trước cả bước chọn nhân vật, nên tới đó là đã có mọi thứ cần xuất mà nhân vật chưa hề vào game.
-Bộ đọc gói cũng chỉ hiểu đúng những mã lệnh phục vụ việc lấy dữ liệu — không đánh nhau, không
-đi lại, không nhặt đồ, không nhiệm vụ.
+Bốn bảng data / map / skill / item về ngay trong lúc bắt tay đăng nhập, trước cả bước chọn nhân
+vật. Riêng **bảng mảnh dựng hình** (`Parts.json`) thì máy chủ chỉ gửi **sau khi nhân vật đã vào
+map** — đo thực tế: đứng ở bước đăng nhập mà xin gói `-87` thì bốn mươi tư gói về không có lấy
+một cái. Nên client vào game thật: chọn nhân vật, và **tạo nhân vật** nếu máy chủ đó chưa có.
+
+Vào rồi thì đứng yên, không đi, không đánh, không nhặt gì. Bộ đọc gói cũng chỉ hiểu đúng những
+mã lệnh phục vụ việc lấy dữ liệu.
+
+Không muốn đụng vào game thì thêm `--khong-vao-map`: dừng ở bước đăng nhập như cũ, đổi lại
+không có `Parts.json`.
 
 ### Chạy tay
 
@@ -127,6 +134,8 @@ dotnet run --project HeadlessClient/DataNro.HeadlessClient -- \
 | `--proxy` | `NRO_PROXY` | `socks5://user:pass@host:port` |
 | `--ra` | `NRO_RA` | Thư mục ghi ra, mặc định `out` |
 | `--khong-anh` | | Chỉ lấy JSON, bỏ qua ảnh |
+| `--khong-vao-map` | | Không vào game (mất `Parts.json`) |
+| `--cho-part` | | Chờ bảng part bao lâu sau khi vào map, mặc định 60000 ms |
 | `--nhip-anh` | | Cách nhau bao lâu giữa hai lần hỏi ảnh (ms) |
 | `--luot-anh` | | Tối đa bao nhiêu lượt đăng nhập lại để xin nốt ảnh |
 | `--lo-anh` | | Mỗi lượt hỏi tối đa bao nhiêu id, mặc định 150 |

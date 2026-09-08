@@ -78,6 +78,8 @@ public sealed class BoDocGoi : IBoDoc
         LoiDangNhap = null;
         daGuiLai = false;
         daBaoSanSang = false;
+        daVaoMap = false;
+        soLanTaoNhanVat = 0;
     }
 
     public void KhiNoiXong()
@@ -96,8 +98,13 @@ public sealed class BoDocGoi : IBoDoc
 
     // ==================== phân phối ====================
 
+    /// <summary>Bật thì ghi lại mọi mã lệnh nhận được - chỉ dùng khi soi giao thức.</summary>
+    public bool GhiMoiGoi { get; set; }
+
     public void KhiNhanGoi(Message msg)
     {
+        if (GhiMoiGoi) log?.Invoke($"<- cmd={msg.command} len={msg.RawLength}");
+
         switch (msg.command)
         {
             case -29:
@@ -107,8 +114,7 @@ public sealed class BoDocGoi : IBoDoc
                 GoiNotMap(msg);
                 break;
             case -87:
-                // Nhóm "data" chỉ có mỗi số phiên bản, không có bảng nào để đọc.
-                msg.reader().readByte(); // phiên bản, ta không đệm nên không dùng tới
+                createData(msg.reader());
                 Data.vcData = Data.vsData;
                 KiemTraDuData();
                 break;
@@ -129,6 +135,15 @@ public sealed class BoDocGoi : IBoDoc
                 // liệu, nên cứ trả lời cho xong - nội dung câu hỏi không cần đọc.
                 GuiThongTinXacMinh();
                 break;
+            case 0:
+                if (ChoPhepVaoMap) ChonNhanVat(msg);
+                break;
+            case 2:
+                if (ChoPhepVaoMap) TaoNhanVat();
+                break;
+            case -24:
+                VaoMap();
+                break;
             case -26:
             case -25:
             case 94:
@@ -137,6 +152,105 @@ public sealed class BoDocGoi : IBoDoc
                 TinMayChu(msg);
                 break;
         }
+    }
+
+    private bool daVaoMap;
+    private int soLanTaoNhanVat;
+
+    /// <summary>
+    /// Máy chủ trả danh sách nhân vật (gói <c>0</c>): chọn ngay nhân vật đầu để vào game.
+    /// Chỉ cần đọc tên, mọi thứ khác trong gói bỏ qua.
+    /// </summary>
+    private void ChonNhanVat(Message msg)
+    {
+        try
+        {
+            var r = msg.reader();
+            var n = r.readByte();
+            if (n <= 0)
+            {
+                TaoNhanVat();
+                return;
+            }
+
+            r.readInt();          // id nhân vật
+            var ten = r.readUTF();
+
+            var m = new Message((sbyte)-28);
+            m.writer().writeByte(1);
+            m.writer().writeUTF(ten);
+            Gui(m);
+            log?.Invoke($"Chọn nhân vật '{ten}' để vào game.");
+        }
+        catch (Exception e)
+        {
+            log?.Invoke("Đọc danh sách nhân vật hỏng: " + e.Message);
+        }
+    }
+
+    /// <summary>
+    /// Tài khoản chưa có nhân vật ở máy chủ này (gói <c>2</c>) thì phải tạo, không thì không
+    /// vào được game - mà không vào game thì máy chủ không gửi bảng mảnh dựng hình.
+    ///
+    /// <para>
+    /// Trùng tên thì máy chủ hỏi lại bằng chính gói <c>2</c>, nên cứ đổi tên rồi gửi lại;
+    /// giới hạn số lần để không lỡ đẻ ra một đàn nhân vật rác.
+    /// </para>
+    /// </summary>
+    private void TaoNhanVat()
+    {
+        if (++soLanTaoNhanVat > SoLanTaoNhanVatToiDa)
+        {
+            log?.Invoke("Tạo nhân vật hỏng quá nhiều lần, thôi.");
+            return;
+        }
+
+        var ten = TenNhanVat + Random.Shared.Next(0, 100000).ToString("D5");
+        var m = new Message((sbyte)-28);
+        m.writer().writeByte(2);
+        m.writer().writeUTF(ten);
+        m.writer().writeByte(GioiTinh);
+        m.writer().writeByte(MaToc[Math.Clamp(GioiTinh, 0, 2)]);
+        Gui(m);
+        log?.Invoke($"Máy chủ chưa có nhân vật, tạo '{ten}' (lần {soLanTaoNhanVat}).");
+    }
+
+    /// <summary>Tên gốc để tạo nhân vật; năm chữ số ngẫu nhiên được nối vào sau.</summary>
+    public string TenNhanVat { get; set; } = "dnro";
+
+    /// <summary>0 Trái Đất, 1 Namếc, 2 Xayda.</summary>
+    public int GioiTinh { get; set; }
+
+    public int SoLanTaoNhanVatToiDa { get; set; } = 8;
+
+    /// <summary>
+    /// Mã tóc thật của từng hành tinh, chép từ <c>CreateCharScr.hairID</c> của client gốc.
+    /// Để 0 là một mã không có thật, có máy chủ nuốt luôn gói tạo mà không nói gì.
+    /// </summary>
+    private static readonly int[] MaToc = { 64, 9, 6 };
+
+    /// <summary>
+    /// Máy chủ đẩy thông tin map (<c>-24</c>) thì trả lời <c>-39</c> là chính thức vào game.
+    ///
+    /// <para>
+    /// Đây là chỗ <b>bắt buộc</b> phải vào game thật, khác với phần còn lại của công cụ. Bảng
+    /// mảnh dựng hình (gói <c>-87</c>) chỉ được máy chủ gửi khi nhân vật đã vào map - đo thực
+    /// tế: đứng ở bước đăng nhập mà xin <c>-87</c> thì bốn mươi tư gói về không có lấy một
+    /// cái. Không cần đọc dữ liệu ô của map, chỉ cần báo đã sẵn sàng.
+    /// </para>
+    /// </summary>
+    /// <summary>Tắt thì dừng ở bước đăng nhập, không vào game và không có bảng part.</summary>
+    public bool ChoPhepVaoMap { get; set; } = true;
+
+    private void VaoMap()
+    {
+        if (daVaoMap || !ChoPhepVaoMap) return;
+        daVaoMap = true;
+        Gui(new Message((sbyte)-39));
+        log?.Invoke("Đã vào map, xin lại nhóm data.");
+
+        // Xin lại nhóm data: lần xin lúc đăng nhập chắc chắn bị bỏ qua.
+        Gui(new Message((sbyte)-87));
     }
 
     private void TinMayChu(Message msg)
@@ -322,6 +436,87 @@ public sealed class BoDocGoi : IBoDoc
     }
 
     // ==================== đọc bảng mẫu ====================
+
+    /// <summary>
+    /// Nguyên bản <c>Controller.createData</c>. Nhóm "data" gồm sáu mảng byte nối đuôi nhau,
+    /// client gốc lưu thành sáu tệp trong máy:
+    /// <c>dart, arrow, effect, image, part, skill</c>.
+    ///
+    /// <para>
+    /// Ta chỉ cần <b>part</b> - bảng mảnh dựng hình NPC. Năm mảng còn lại vẫn phải đọc cho
+    /// đúng thứ tự, không thì con trỏ lệch và mảng part ra rác.
+    /// </para>
+    /// </summary>
+    private void createData(myReader d)
+    {
+        d.readByte(); // phiên bản; ta không đệm nên không dùng tới
+
+        DocMangByte(d); // dart
+        DocMangByte(d); // arrow
+        DocMangByte(d); // effect
+        DocMangByte(d); // image
+        var part = DocMangByte(d);
+        DocMangByte(d); // skill
+
+        if (part != null) DocPart(part);
+    }
+
+    /// <summary>Nguyên bản <c>NinjaUtil.readByteArray</c>: một <c>int</c> độ dài rồi bấy nhiêu byte.</summary>
+    private static sbyte[] DocMangByte(myReader d)
+    {
+        try
+        {
+            var n = d.readInt();
+            if (n <= 0) return null;
+            var ra = new sbyte[n];
+            d.readFully(ref ra);
+            return ra;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Bảng mảnh dựng hình: <c>short</c> số part, rồi mỗi part một <c>byte</c> loại và bấy
+    /// nhiêu khung <c>(short id, byte dx, byte dy)</c>. Số khung suy từ loại.
+    /// </summary>
+    private void DocPart(sbyte[] raw)
+    {
+        try
+        {
+            var d = new myReader(raw);
+            var n = d.readShort();
+            var ds = new Part[n];
+
+            for (var i = 0; i < n; i++)
+            {
+                var loai = d.readByte();
+                var soKhung = Part.SoKhung(loai);
+                if (soKhung == 0)
+                {
+                    // Loại lạ thì không biết đọc bao nhiêu khung, đọc bừa là lệch hết phần
+                    // sau. Giữ những part đã đọc được rồi dừng, còn hơn ra một bảng rác.
+                    log?.Invoke($"Part loại lạ ({loai}) ở vị trí {i}, dừng đọc bảng part.");
+                    Array.Resize(ref ds, i);
+                    break;
+                }
+
+                var p = new Part { type = loai, pi = new PartImage[soKhung] };
+                for (var j = 0; j < soKhung; j++)
+                    p.pi[j] = new PartImage { id = d.readShort(), dx = d.readByte(), dy = d.readByte() };
+                ds[i] = p;
+            }
+
+            Data.parts = ds;
+            log?.Invoke($"Bảng part: {ds.Length} mảnh");
+        }
+        catch (Exception e)
+        {
+            log?.Invoke("Đọc bảng part hỏng: " + e.Message);
+        }
+    }
 
     /// <summary>Nguyên bản <c>Controller.createMap</c>: tên map, mẫu NPC, mẫu quái.</summary>
     private void createMap(myReader d)

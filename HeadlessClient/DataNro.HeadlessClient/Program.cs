@@ -46,6 +46,8 @@ public static class Program
         }
 
         using var phien = new Phien(m => Console.WriteLine("  " + m));
+        phien.Doc.GhiMoiGoi = Environment.GetEnvironmentVariable("NRO_SOI") == "1";
+        phien.Doc.ChoPhepVaoMap = c.VaoMap;
         if (!DatProxy(phien, c)) return 2;
 
         // Hạn tổng phải bao được hết các lần thử lại, không thì nó cắt ngang giữa chừng và
@@ -61,6 +63,20 @@ public static class Program
             phien.Ngat();
             Console.Error.WriteLine("Không lấy đủ dữ liệu. " + phien.Data);
             return 1;
+        }
+
+        // Bảng mảnh dựng hình về muộn hơn hẳn: máy chủ chỉ gửi sau khi nhân vật đã vào map,
+        // mà vào map thì còn phải chọn (hoặc tạo) nhân vật xong đã. Chờ có hạn - máy chủ nào
+        // không gửi thì vẫn xuất những bảng còn lại chứ không hỏng cả lượt.
+        if (c.VaoMap && phien.Data.parts.Length == 0)
+        {
+            var hanPart = Environment.TickCount64 + c.ChoPartMs;
+            while (phien.Data.parts.Length == 0 && Environment.TickCount64 < hanPart
+                   && phien.DaNoi && !het.IsCancellationRequested)
+                await Task.Delay(250).ConfigureAwait(false);
+
+            if (phien.Data.parts.Length == 0)
+                Console.WriteLine("  không nhận được bảng part, bỏ qua Parts.json");
         }
 
         // Ghi bảng dữ liệu trước, rồi mới tải ảnh: ảnh mất cả chục phút và có thể đứt giữa
