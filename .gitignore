@@ -1,0 +1,11 @@
+# .NET
+[Bb]in/
+[Oo]bj/
+
+# Rider / VS / VSCode
+.idea/
+.vs/
+.vscode/
+
+# Thu muc headless client ghi du lieu ra khi chay tay
+out/

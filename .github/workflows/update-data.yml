@@ -1,0 +1,195 @@
+name: Cập nhật dữ liệu
+
+# Đăng nhập vào từng máy chủ Ngọc Rồng, đổ bảng mẫu ra JSON và ảnh icon ra PNG, rồi commit
+# thẳng vào repo này. Trang tra cứu (index.html) được GitHub Pages phục vụ từ nhánh main.
+#
+# Cần đúng MỘT secret ở Settings → Secrets and variables → Actions (Repository secrets):
+#   NRO_TAIKHOAN   tài khoản|mật khẩu - mọi máy chủ dùng chung một tài khoản
+#
+# Trường thứ ba là proxy, bỏ trống thì đi thẳng - máy chủ không chặn IP nước ngoài nên máy
+# chạy của GitHub nối được. Chỉ thêm khi nào log báo "Không nối được tới máy chủ":
+#   taikhoan|matkhau|socks5://user:pass@1.2.3.4:1080
+#
+# Không cần personal access token: repo này công khai và workflow ghi vào chính nó, nên
+# GITHUB_TOKEN với quyền contents:write là đủ.
+
+on:
+  schedule:
+    # 5h sáng giờ Việt Nam
+    - cron: "0 22 * * *"
+  workflow_dispatch:
+    inputs:
+      bo-qua-anh:
+        description: "Bỏ qua tải ảnh (chỉ lấy JSON, chạy nhanh)"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: capnhat-du-lieu
+  cancel-in-progress: false
+
+env:
+  # Mỗi dòng "thư mục = tên máy chủ trong danh sách sống của game". CỐ Ý không ghi IP ở đây:
+  # client tự hỏi http://112.213.94.23/mod/server_extra.php rồi tra theo tên, nên máy chủ đổi
+  # IP là nó tự theo, không phải sửa gì. Máy chủ ĐẦU TIÊN là máy đi tải ảnh; các máy sau bỏ
+  # qua ảnh vì ảnh nằm chung thư mục Icons theo nhà phát hành - mười tám máy chủ cùng tải chỉ
+  # tốn mười tám lần thời gian mà ra đúng một bộ. Bớt máy chủ thì xoá dòng.
+  DANH_SACH: |
+    Server1=Vũ trụ 1
+    Server2=Vũ trụ 2
+    Server3=Vũ trụ 3
+    Server4=Vũ trụ 4
+    Server5=Vũ trụ 5
+    Server6=Vũ trụ 6
+    Server7=Vũ trụ 7
+    Server8=Vũ trụ 8
+    Server9=Vũ trụ 9
+    Server10=Vũ trụ 10
+    Server11=Vũ trụ 11
+    Server12=Vũ trụ 12
+    Server13=Vũ trụ 13
+    Server14=Vũ trụ 14
+    Server15=Vũ trụ 15
+    Super1=Super 1
+    Super2=Super 2
+    Super3=Super 3
+
+jobs:
+  capnhat:
+    name: Đổ dữ liệu
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Lấy mã nguồn
+        uses: actions/checkout@v4
+
+      - name: Cài .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Dựng headless client
+        run: dotnet build HeadlessClient/DataNro.HeadlessClient/DataNro.HeadlessClient.csproj -c Release --nologo
+
+      - name: Đổ dữ liệu từng máy chủ
+        env:
+          BO_QUA_ANH: ${{ github.event.inputs.bo-qua-anh }}
+          NRO_TAIKHOAN: ${{ secrets.NRO_TAIKHOAN }}
+        run: |
+          set -u
+          if [ -z "${NRO_TAIKHOAN:-}" ]; then
+            echo "::error::Thiếu secret NRO_TAIKHOAN (tài khoản|mật khẩu)"
+            exit 1
+          fi
+
+          # Một tài khoản dùng cho mọi máy chủ; trường proxy thứ ba bỏ trống được.
+          IFS='|' read -r NRO_TK NRO_MK NRO_PROXY <<< "$NRO_TAIKHOAN"
+          export NRO_TK NRO_MK NRO_PROXY
+
+          # Ghi thẳng vào thư mục làm việc: repo này vừa là mã nguồn vừa là nơi chứa dữ liệu,
+          # nên ảnh của lần trước đã có sẵn và chỉ phải hỏi ảnh mới.
+          export NRO_RA=.
+          duan=HeadlessClient/DataNro.HeadlessClient/DataNro.HeadlessClient.csproj
+
+          con_anh=1
+          xong=0
+          hong=""
+
+          while IFS='=' read -r NRO_THUMUC NRO_MAYCHU; do
+            [ -n "${NRO_MAYCHU:-}" ] || continue
+            export NRO_THUMUC NRO_MAYCHU
+
+            if [ "$con_anh" = 1 ] && [ "${BO_QUA_ANH:-}" != "true" ]; then
+              co_anh=""
+            else
+              co_anh="--khong-anh"
+            fi
+
+            echo "::group::$NRO_MAYCHU"
+            if dotnet run --project "$duan" -c Release --no-build -- $co_anh; then
+              xong=$((xong + 1))
+              # Chỉ tắt lượt ảnh khi nó thật sự chạy xong - máy chủ đầu mà chết thì máy kế
+              # tiếp phải gánh việc tải ảnh, không thì cả hôm đó không có ảnh mới nào.
+              if [ -z "$co_anh" ]; then con_anh=0; fi
+            else
+              # Một máy chủ chết (bảo trì, đổi tên) không được kéo cả lượt xuống theo.
+              echo "::warning::$NRO_MAYCHU hỏng, bỏ qua"
+              if [ -n "$hong" ]; then hong="$hong, $NRO_MAYCHU"; else hong="$NRO_MAYCHU"; fi
+            fi
+            echo "::endgroup::"
+          done <<< "$DANH_SACH"
+
+          echo "Xong $xong máy chủ.${hong:+ Hỏng: $hong}"
+          [ "$xong" -gt 0 ] || { echo "::error::Không máy chủ nào đổ được dữ liệu"; exit 1; }
+
+      - name: Kiểm tra kết quả
+        run: |
+          set -e
+          echo "ảnh: $(find . -path ./HeadlessClient -prune -o -name '*.png' -print | wc -l) tệp"
+          for f in $(find . -name ItemTemplates.json); do
+            n=$(python3 -c "import json;print(len(json.load(open('$f'))))")
+            echo "$f: $n mục"
+            # Bảng vật phẩm rỗng nghĩa là máy chủ chưa gửi xong mà ta đã ghi - đừng đẩy đi.
+            [ "$n" -gt 100 ] || { echo "::error::$f quá ít mục, nghi dữ liệu hỏng"; exit 1; }
+          done
+
+      - name: Sinh index.json cho trang
+        run: |
+          python3 - <<'PY'
+          import json, os
+
+          # Tên hiển thị cho đẹp; nhà phát hành lạ thì lấy luôn tên thư mục.
+          TEN_NPH = {"TeaMobi": "TeaMobi (Ngọc Rồng Online)"}
+          TIEN_TO = ("Server", "Super")
+          BO_QUA = {"HeadlessClient", "node_modules"}
+
+          def ten_sv(s):
+              """Server1 -> "Server 1", Super1 -> "Super 1"; tên khác để nguyên."""
+              for t in TIEN_TO:
+                  if s.startswith(t) and s[len(t):].isdigit():
+                      return t + " " + s[len(t):]
+              return s
+
+          def khoa_sv(s):
+              """Xếp Server2 trước Server10 - so chuỗi thì "10" lại đứng trước "2"."""
+              for t in TIEN_TO:
+                  if s.startswith(t) and s[len(t):].isdigit():
+                      return (t, int(s[len(t):]))
+              return (s, 0)
+
+          nph = []
+          for n in sorted(os.listdir(".")):
+              if not os.path.isdir(n) or n.startswith(".") or n in BO_QUA:
+                  continue
+              svs = sorted((s for s in os.listdir(n)
+                            if os.path.isfile(os.path.join(n, s, "Maps.json"))),
+                           key=khoa_sv)
+              if svs:
+                  nph.append({
+                      "id": n,
+                      "ten": TEN_NPH.get(n, n),
+                      "mayChu": [{"id": s, "ten": ten_sv(s)} for s in svs],
+                  })
+
+          with open("index.json", "w", encoding="utf-8") as f:
+              json.dump({"nhaPhatHanh": nph}, f, ensure_ascii=False, indent=2)
+              f.write("\n")
+
+          print(json.dumps(nph, ensure_ascii=False))
+          PY
+
+      - name: Commit và đẩy
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Dữ liệu không đổi, không commit."
+            exit 0
+          fi
+          git commit -m "data: cập nhật tự động $(date -u +%Y-%m-%d)"
+          git push

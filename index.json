@@ -1,0 +1,14 @@
+{
+  "nhaPhatHanh": [
+    {
+      "id": "TeaMobi",
+      "ten": "TeaMobi (Ngọc Rồng Online)",
+      "mayChu": [
+        {
+          "id": "Server1",
+          "ten": "Server 1"
+        }
+      ]
+    }
+  ]
+}
