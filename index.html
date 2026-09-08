@@ -365,6 +365,14 @@ footer {
   max-width: 1560px; margin: 0 auto; padding: 0 20px 48px;
   color: var(--chu-mo); font-size: 13px;
 }
+.tai-ve {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 16px; padding: 14px 16px;
+  background: var(--noi); border: 1px solid var(--vien);
+  border-radius: var(--r); box-shadow: var(--bong-1);
+}
+.tai-ve b { color: var(--chu); font-size: 14px; margin-right: 4px; }
+.tien-do { font: 500 13px var(--mono); color: var(--chu-vua); }
 
 @media (max-width: 900px) {
   .hang-1 { height: auto; padding-top: 10px; padding-bottom: 10px; flex-wrap: wrap; }
@@ -424,6 +432,14 @@ footer {
 <main><div class="dan" id="noi-dung"></div></main>
 
 <footer>
+  <div class="tai-ve">
+    <b>Tải về</b>
+    <button class="nut" data-tai="anh">Ảnh</button>
+    <button class="nut" data-tai="quai">Dữ liệu quái</button>
+    <button class="nut" data-tai="map">Dữ liệu map</button>
+    <button class="nut" data-tai="json">Toàn bộ JSON</button>
+    <span class="tien-do" id="tien-do"></span>
+  </div>
   Dữ liệu lấy thẳng từ máy chủ game, cập nhật tự động mỗi ngày ·
   <a id="link-json" href="#">JSON gốc</a> ·
   <a href="https://github.com/duykhongphai/DataNro">Mã nguồn</a>
@@ -1153,6 +1169,9 @@ async function khoiDong() {
     ve();
   });
 
+  document.querySelectorAll("[data-tai]").forEach((n) =>
+    n.addEventListener("click", () => taiVe(n.dataset.tai)));
+
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") return dongNgan();
     if (e.key === "/" && document.activeElement !== $("tim")) {
@@ -1160,6 +1179,171 @@ async function khoiDong() {
       $("tim").focus();
     }
   });
+}
+
+// ══════════ đóng gói zip ══════════
+
+/**
+ * Bảng CRC-32 dựng sẵn. ZIP bắt buộc có CRC của từng tệp, không bỏ qua được.
+ */
+const BANG_CRC = (() => {
+  const b = new Uint32Array(256);
+  for (let i = 0; i < 256; i++) {
+    let c = i;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    b[i] = c >>> 0;
+  }
+  return b;
+})();
+
+function crc32(u8) {
+  let c = 0xffffffff;
+  for (let i = 0; i < u8.length; i++) c = BANG_CRC[(c ^ u8[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
+/**
+ * Gói mấy tệp thành một Blob zip, kiểu "store" - xếp cạnh nhau, không nén.
+ *
+ * <p>Tự viết chứ không kéo thư viện: phần lớn nội dung là PNG với JSON, mà PNG thì đã nén
+ * sẵn rồi, nén lại chỉ tốn thời gian máy người dùng để lấy về vài phần trăm. Zip kiểu store
+ * chỉ là mấy cái tiêu đề ghép quanh dữ liệu gốc, đủ để Windows với macOS mở thẳng.</p>
+ */
+function dongZip(dsTep) {
+  const enc = new TextEncoder();
+  const cuc = [];
+  const muc = [];
+  let vt = 0;
+
+  for (const { ten, du } of dsTep) {
+    const t = enc.encode(ten);
+    const crc = crc32(du);
+
+    const dau = new DataView(new ArrayBuffer(30));
+    dau.setUint32(0, 0x04034b50, true);
+    dau.setUint16(4, 20, true);          // cần bản 2.0
+    dau.setUint16(6, 0x0800, true);      // tên tệp là UTF-8
+    dau.setUint16(8, 0, true);           // store
+    dau.setUint32(10, 0, true);          // giờ + ngày: để 0 cho gọn
+    dau.setUint32(14, crc, true);
+    dau.setUint32(18, du.length, true);
+    dau.setUint32(22, du.length, true);
+    dau.setUint16(26, t.length, true);
+
+    cuc.push(new Uint8Array(dau.buffer), t, du);
+
+    const tt = new DataView(new ArrayBuffer(46));
+    tt.setUint32(0, 0x02014b50, true);
+    tt.setUint16(4, 20, true);
+    tt.setUint16(6, 20, true);
+    tt.setUint16(8, 0x0800, true);
+    tt.setUint16(10, 0, true);
+    tt.setUint32(12, 0, true);
+    tt.setUint32(16, crc, true);
+    tt.setUint32(20, du.length, true);
+    tt.setUint32(24, du.length, true);
+    tt.setUint16(28, t.length, true);
+    tt.setUint32(42, vt, true);          // vị trí tiêu đề cục bộ
+    muc.push(new Uint8Array(tt.buffer), t);
+
+    vt += 30 + t.length + du.length;
+  }
+
+  let coTT = 0;
+  for (const m of muc) coTT += m.length;
+
+  const cuoi = new DataView(new ArrayBuffer(22));
+  cuoi.setUint32(0, 0x06054b50, true);
+  cuoi.setUint16(8, dsTep.length, true);
+  cuoi.setUint16(10, dsTep.length, true);
+  cuoi.setUint32(12, coTT, true);
+  cuoi.setUint32(16, vt, true);
+
+  return new Blob([...cuc, ...muc, new Uint8Array(cuoi.buffer)], { type: "application/zip" });
+}
+
+function luuBlob(blob, ten) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = ten;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+}
+
+/** Tải song song vừa phải: nhiều quá thì trình duyệt tự xếp hàng mà máy vẫn ì. */
+async function taiHangLoat(ds, bao) {
+  const ra = [];
+  let xong = 0;
+  const SONG_SONG = 8;
+
+  async function tho() {
+    for (;;) {
+      const m = ds.shift();
+      if (!m) return;
+      try {
+        const r = await fetch(m.duong);
+        if (r.ok) ra.push({ ten: m.ten, du: new Uint8Array(await r.arrayBuffer()) });
+      } catch {
+        // thiếu một tệp thì bỏ qua, còn hơn hỏng cả gói
+      }
+      bao(++xong);
+    }
+  }
+
+  await Promise.all(Array.from({ length: SONG_SONG }, tho));
+  return ra;
+}
+
+async function taiVe(loai) {
+  const nut = document.querySelectorAll("[data-tai]");
+  const bao = (t) => { $("tien-do").textContent = t; };
+  nut.forEach((n) => (n.disabled = true));
+
+  try {
+    let ds = [];
+    let ten = "";
+
+    if (loai === "anh") {
+      const co = await layKichThuoc();
+      const ids = co ? Object.keys(co).map(Number) : [];
+      if (!ids.length) throw new Error("chưa có bảng Icons/Sizes.json");
+      ten = `${T.nph}-icons.zip`;
+      ds = ids.map((id) => ({
+        ten: `Icons/${Math.floor(id / 1000)}/${id}.png`,
+        duong: `${T.nph}/Icons/${Math.floor(id / 1000)}/${id}.png`
+      }));
+    } else if (loai === "quai") {
+      const bang = await layQuai();
+      ten = `${T.nph}-mobs.zip`;
+      ds = [{ ten: "Mobs/MobFrames.json", duong: `${T.nph}/Mobs/MobFrames.json` }];
+      for (const id of bang.keys())
+        ds.push({ ten: `Mobs/${id}.png`, duong: `${T.nph}/Mobs/${id}.png` });
+    } else if (loai === "map") {
+      ten = `${T.nph}-maps.zip`;
+      ds = [
+        { ten: "Maps/MapTiles.json", duong: `${T.nph}/Maps/MapTiles.json` },
+        { ten: `${T.sv}/Maps.json`, duong: `${T.nph}/${T.sv}/Maps.json` }
+      ];
+    } else {
+      ten = `${T.nph}-${T.sv}-json.zip`;
+      ds = ["ItemTemplates", "ItemOptionTemplates", "MobTemplates", "NpcTemplates",
+        "NClasses", "SkillOptionTemplates", "Maps", "Parts"]
+        .map((f) => ({ ten: `${T.sv}/${f}.json`, duong: `${T.nph}/${T.sv}/${f}.json` }));
+    }
+
+    const tong = ds.length;
+    bao(`0/${tong}`);
+    const tep = await taiHangLoat(ds, (n) => bao(`${n}/${tong}`));
+    if (!tep.length) throw new Error("không lấy được tệp nào");
+
+    bao("đang gói…");
+    luuBlob(dongZip(tep), ten);
+    bao(`xong ${tep.length}/${tong} tệp`);
+  } catch (e) {
+    bao("hỏng: " + e.message);
+  } finally {
+    nut.forEach((n) => (n.disabled = false));
+  }
 }
 
 khoiDong();
