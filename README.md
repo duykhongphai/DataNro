@@ -28,6 +28,12 @@ hành. Ví dụ id 410 ở `TeaMobi/Icons/0/410.png`, id 17529 ở `TeaMobi/Icon
 Chia thư mục con vì GitHub cắt danh sách thư mục ở 1000 tệp — tệp vẫn còn đủ và raw URL vẫn
 chạy, chỉ là mở trên web thì nhìn như mất bớt.
 
+Mọi thư mục hình ghép sẵn (`NpcHinh`, `MobHinh`, `EffectHinh`) đều có thêm thư mục con `nho/`
+chứa bản **thu nhỏ hai lần**: lưới trên trang chỉ hiện ô 104px, tải bản gốc rồi thu bằng CSS là
+phí băng thông gấp bốn. Thu bằng cách lấy điểm đầu mỗi khối chứ không lấy trung bình — ảnh máy
+chủ gửi ở mức phóng 4 là ảnh gốc nhân nguyên lên, nên lấy điểm đầu là khôi phục đúng ảnh gốc,
+còn trung bình thì làm nhoè viền.
+
 `TeaMobi/Icons/Sizes.json` là bảng kích thước của mọi ảnh, dạng `{"410":[56,56], ...}` — cần để
 tính hộp bao hình NPC mà không phải đợi ba mảnh tải xong. `Icons/KhongCo.json` là danh sách id
 máy chủ đã xác nhận là không có ảnh, để lượt sau khỏi hỏi lại.
@@ -263,6 +269,7 @@ như ảnh. Quét 0–300 được **98 hiệu ứng**.
 |---|---|
 | `Effects/<id>.png` + `EffectFrames.json` | sprite gốc và bảng khung, để tự dựng |
 | `EffectHinh/<id>.png` + `Anim.json` | dải khung ngang ghép sẵn, mỗi ô một khung |
+| `EffectHinh/nho/<id>.png` | bản thu nhỏ hai lần, dành cho lưới trên trang |
 
 Dải ngang là để trang web chạy hoạt ảnh bằng đúng một câu CSS `steps(n)` — không canvas, không
 JS đếm nhịp. Thứ tự ô theo `anim` chứ không theo `frames`, vì `anim` mới là trình tự chiếu và

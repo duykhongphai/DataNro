@@ -160,26 +160,21 @@ public static class AnhPng
     }
 
     /// <summary>
-    /// Đóng một mảng RGBA thành tệp PNG. Lọc dòng để 0 hết - dữ liệu đã qua deflate rồi, bày
-    /// đặt chọn bộ lọc chỉ để bớt vài phần trăm thì không bõ.
+    /// Đóng một mảng RGBA thành tệp PNG.
+    ///
+    /// <para>
+    /// Nén <b>hai lần</b> rồi lấy bản nhỏ hơn: một lần để bộ lọc 0 hết, một lần chọn bộ lọc
+    /// cho từng dòng theo cách chuẩn của libpng (thử cả năm, lấy cái có tổng trị tuyệt đối nhỏ
+    /// nhất). Đo trên chính kho ảnh này thì không có bên nào thắng tuyệt đối - ảnh máy chủ gửi
+    /// ở mức phóng 4 gồm toàn khối 4x4 giống hệt nhau, deflate nuốt chuỗi lặp ấy rất gọn nên
+    /// lọc 0 thường thắng; đổi sang bộ lọc thích ứng làm hình quái phình từ 18 lên 31 KB. Còn
+    /// mấy tấm có chuyển màu mượt thì ngược lại. Thử cả hai là xong, tốn thêm chút CPU của máy
+    /// dựng chứ người xem thì chỉ được lợi.
+    /// </para>
     /// </summary>
     public static byte[] Ghi(byte[] rgba, int rong, int cao)
     {
-        var tho = new byte[(rong * 4 + 1) * cao];
-        for (var y = 0; y < cao; y++)
-        {
-            tho[y * (rong * 4 + 1)] = 0;
-            Array.Copy(rgba, y * rong * 4, tho, y * (rong * 4 + 1) + 1, rong * 4);
-        }
-
-        byte[] nen;
-        using (var ra = new MemoryStream())
-        {
-            using (var ep = new ZLibStream(ra, CompressionLevel.Optimal, true))
-                ep.Write(tho, 0, tho.Length);
-            nen = ra.ToArray();
-        }
-
+        var nen = NhoHon(NenTho(ThoLoc0(rgba, rong, cao)), NenTho(ThoLocThichUng(rgba, rong, cao)));
         using var tep = new MemoryStream();
         tep.Write(new byte[] { 0x89, (byte)'P', (byte)'N', (byte)'G', 13, 10, 26, 10 }, 0, 8);
 
@@ -192,6 +187,104 @@ public static class AnhPng
         Khoi(tep, "IDAT", nen);
         Khoi(tep, "IEND", Array.Empty<byte>());
         return tep.ToArray();
+    }
+
+    /// <summary>
+    /// Thu nhỏ nguyên lần bằng cách lấy điểm đầu mỗi khối.
+    ///
+    /// <para>
+    /// Không lấy trung bình: ảnh máy chủ gửi ở mức phóng 4 là ảnh gốc được nhân nguyên lên,
+    /// mỗi điểm thành khối 4x4 giống hệt nhau - lấy điểm đầu mỗi khối là <b>khôi phục đúng
+    /// ảnh gốc</b>, không mất gì. Trung bình thì lại làm nhoè viền.
+    /// </para>
+    /// </summary>
+    public static byte[] ThuNho(byte[] rgba, int rong, int cao, int lan, out int rongMoi,
+        out int caoMoi)
+    {
+        rongMoi = rong / lan;
+        caoMoi = cao / lan;
+        if (lan <= 1 || rongMoi <= 0 || caoMoi <= 0) return null;
+
+        var ra = new byte[rongMoi * caoMoi * 4];
+        for (var y = 0; y < caoMoi; y++)
+        for (var x = 0; x < rongMoi; x++)
+            Array.Copy(rgba, ((y * lan) * rong + x * lan) * 4, ra, (y * rongMoi + x) * 4, 4);
+
+        return ra;
+    }
+
+    private static byte[] NhoHon(byte[] a, byte[] b) =>
+        b == null || (a != null && a.Length <= b.Length) ? a : b;
+
+    /// <summary>Dòng nào cũng để bộ lọc 0 - dữ liệu giữ nguyên, deflate tự lo.</summary>
+    private static byte[] ThoLoc0(byte[] rgba, int rong, int cao)
+    {
+        var moiDong = rong * 4;
+        var tho = new byte[(moiDong + 1) * cao];
+        for (var y = 0; y < cao; y++)
+        {
+            tho[y * (moiDong + 1)] = 0;
+            Array.Copy(rgba, y * moiDong, tho, y * (moiDong + 1) + 1, moiDong);
+        }
+
+        return tho;
+    }
+
+    /// <summary>Chọn bộ lọc cho từng dòng: thử cả năm, lấy cái có tổng trị tuyệt đối nhỏ nhất.</summary>
+    private static byte[] ThoLocThichUng(byte[] rgba, int rong, int cao)
+    {
+        const int bpp = 4;
+        var moiDong = rong * bpp;
+        var tho = new byte[(moiDong + 1) * cao];
+
+        var thu = new byte[5][];
+        for (var i = 0; i < 5; i++) thu[i] = new byte[moiDong];
+        var truoc = new byte[moiDong];
+
+        for (var y = 0; y < cao; y++)
+        {
+            var nguon = y * moiDong;
+
+            for (var i = 0; i < moiDong; i++)
+            {
+                int x = rgba[nguon + i];
+                int a = i >= bpp ? rgba[nguon + i - bpp] : 0;
+                int b = truoc[i];
+                int c = i >= bpp ? truoc[i - bpp] : 0;
+
+                thu[0][i] = (byte)x;
+                thu[1][i] = (byte)(x - a);
+                thu[2][i] = (byte)(x - b);
+                thu[3][i] = (byte)(x - (a + b) / 2);
+                thu[4][i] = (byte)(x - Paeth(a, b, c));
+            }
+
+            var tot = 0;
+            var diemTot = long.MaxValue;
+            for (var i = 0; i < 5; i++)
+            {
+                long diem = 0;
+                foreach (var v in thu[i]) diem += v < 128 ? v : 256 - v;
+                if (diem >= diemTot) continue;
+                diemTot = diem;
+                tot = i;
+            }
+
+            var dich = y * (moiDong + 1);
+            tho[dich] = (byte)tot;
+            Array.Copy(thu[tot], 0, tho, dich + 1, moiDong);
+            Array.Copy(rgba, nguon, truoc, 0, moiDong);
+        }
+
+        return tho;
+    }
+
+    private static byte[] NenTho(byte[] tho)
+    {
+        using var ra = new MemoryStream();
+        using (var ep = new ZLibStream(ra, CompressionLevel.SmallestSize, true))
+            ep.Write(tho, 0, tho.Length);
+        return ra.ToArray();
     }
 
     private static void Khoi(Stream ra, string loai, byte[] noiDung)

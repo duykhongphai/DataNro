@@ -73,8 +73,7 @@ public static class BoGhepHinh
 
             if (Ghep(manh, out var rgba, out var rong, out var cao))
             {
-                File.WriteAllBytes(Path.Combine(thuMucRa, npc.npcTemplateId + ".png"),
-                    AnhPng.Ghi(rgba, rong, cao));
+                GhiKemBanNho(thuMucRa, npc.npcTemplateId + ".png", rgba, rong, cao);
                 n++;
             }
         }
@@ -194,8 +193,7 @@ public static class BoGhepHinh
 
             if (!Ghep(manh, out var rgba, out var rong, out var cao)) continue;
 
-            File.WriteAllBytes(Path.Combine(thuMucRa, q.MobTemplateId + ".png"),
-                AnhPng.Ghi(rgba, rong, cao));
+            GhiKemBanNho(thuMucRa, q.MobTemplateId + ".png", rgba, rong, cao);
             n++;
         }
 
@@ -341,7 +339,7 @@ public static class BoGhepHinh
                     i * rongO + (m.Dx - x0) * ti, (m.Dy - y0) * ti);
             }
 
-            File.WriteAllBytes(Path.Combine(thuMucRa, e.Id + ".png"), AnhPng.Ghi(dai, rongDai, caoO));
+            GhiKemBanNho(thuMucRa, e.Id + ".png", dai, rongDai, caoO);
             moTa.Add(new DaiRa { Id = e.Id, W = rongO, H = caoO, N = chuoi.Count });
         }
 
@@ -353,6 +351,27 @@ public static class BoGhepHinh
     }
 
     // ==================== dùng chung ====================
+
+    /// <summary>
+    /// Ghi ảnh ra đĩa, kèm một bản <b>thu nhỏ hai lần</b> trong thư mục con <c>nho/</c>.
+    ///
+    /// <para>
+    /// Lưới trên trang chỉ hiện ô 104px, mà ảnh ghép ở mức phóng 4 có tấm rộng năm trăm điểm -
+    /// tải về rồi thu bằng CSS là phí băng thông gấp mấy lần. Bản nhỏ chia đôi vẫn thừa nét cho
+    /// ô ấy, còn bản gốc để dành cho ngăn chi tiết và cho ai tải về.
+    /// </para>
+    /// </summary>
+    private static void GhiKemBanNho(string thuMucRa, string ten, byte[] rgba, int rong, int cao)
+    {
+        File.WriteAllBytes(Path.Combine(thuMucRa, ten), AnhPng.Ghi(rgba, rong, cao));
+
+        var nho = AnhPng.ThuNho(rgba, rong, cao, 2, out var rongNho, out var caoNho);
+        if (nho == null) return;
+
+        var thuMucNho = Path.Combine(thuMucRa, "nho");
+        Directory.CreateDirectory(thuMucNho);
+        File.WriteAllBytes(Path.Combine(thuMucNho, ten), AnhPng.Ghi(nho, rongNho, caoNho));
+    }
 
     /// <summary>Xếp các mảnh lên một tấm vừa khít hộp bao của chúng.</summary>
     private static bool Ghep(List<Manh> manh, out byte[] rgba, out int rong, out int cao)

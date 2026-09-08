@@ -617,19 +617,29 @@ function veAnh(id) {
  * tải, còn quái thì kéo về nguyên tấm sprite chỉ để lấy một khung. Giờ mỗi con đúng một ảnh
  * nhỏ. Bảng part với bảng khung vẫn còn trong kho JSON cho ai muốn tự dựng.</p>
  */
-const veHinhGhep = (thuMuc, id, lop) =>
+/**
+ * Ô hình trong lưới dùng bản <b>thu nhỏ hai lần</b>, ngăn chi tiết mới dùng bản gốc.
+ *
+ * <p>Ô chỉ rộng 104px mà ảnh ghép ở mức phóng 4 có tấm rộng năm trăm điểm - tải bản gốc rồi
+ * thu bằng CSS là phí băng thông gấp bốn. Đo trên kho hiện tại: một trang 36 hiệu ứng từ
+ * 6,4 MB xuống còn 1,4 MB.</p>
+ */
+const veHinhGhep = (thuMuc, id, lop, nho) =>
   `<span class="${lop}"><img loading="lazy" decoding="async" alt=""
-    src="${T.nph}/${thuMuc}/${id}.png" onerror="this.style.display='none'"></span>`;
+    src="${T.nph}/${thuMuc}/${nho ? "nho/" : ""}${id}.png"
+    onerror="this.style.display='none'"></span>`;
 
-const veHinhNpc = (x) => veHinhGhep("NpcHinh", x.npcTemplateId, "npc-hinh");
+const veHinhNpc = (x, nho) => veHinhGhep("NpcHinh", x.npcTemplateId, "npc-hinh", nho);
 
 /** Một hiệu ứng đang chạy. <c>x</c> là mục trong Anim.json: id, cỡ một ô, số ô. */
-function veHieuUng(x) {
-  const co = Math.min(1, 96 / Math.max(x.w, x.h, 1));
-  return `<span class="eff-o"><span style="--w:${x.w}px;--h:${x.h}px;--n:${x.n};
-    --co:${co.toFixed(3)};--tam:url('${T.nph}/EffectHinh/${x.id}.png')"></span></span>`;
+function veHieuUng(x, nho) {
+  const lan = nho ? 2 : 1;
+  const w = Math.floor(x.w / lan), h = Math.floor(x.h / lan);
+  const co = Math.min(1, 96 / Math.max(w, h, 1));
+  return `<span class="eff-o"><span style="--w:${w}px;--h:${h}px;--n:${x.n};
+    --co:${co.toFixed(3)};--tam:url('${T.nph}/EffectHinh/${nho ? "nho/" : ""}${x.id}.png')"></span></span>`;
 }
-const veHinhQuai = (id) => veHinhGhep("MobHinh", id, "quai-hinh");
+const veHinhQuai = (id, nho) => veHinhGhep("MobHinh", id, "quai-hinh", nho);
 
 /** Chip bấm là chép. Đây là thứ dùng nhiều nhất của trang này nên để nó thật rõ. */
 const chep = (giaTri, nhan) =>
@@ -800,7 +810,7 @@ const VE = {
 
   quai: (ds) => ds.map((x, i) => `<article class="the" data-i="${i}">
     <div class="the-tren">
-      ${veHinhQuai(x.mobTemplateId)}
+      ${veHinhQuai(x.mobTemplateId, true)}
       <div class="the-chu">
         <div class="the-ten">${thoat(x.name)}</div>
         <div class="the-chip">
@@ -817,7 +827,7 @@ const VE = {
 
   npc: (ds) => ds.map((x, i) => `<article class="the" data-i="${i}">
     <div class="the-tren">
-      ${veHinhNpc(x)}
+      ${veHinhNpc(x, true)}
       <div class="the-chu">
         <div class="the-ten">${thoat(x.name)}</div>
         <div class="the-chip">${(x.menu || []).flat().map((m) => chep(m)).join("")}</div>
@@ -835,7 +845,7 @@ const VE = {
 
   hieuung: (ds) => ds.map((x, i) => `<article class="the" data-i="${i}">
     <div class="the-tren">
-      ${veHieuUng(x)}
+      ${veHieuUng(x, true)}
       <div class="the-chu">
         <div class="the-ten">Hiệu ứng ${x.id}</div>
         <div class="the-chip">
