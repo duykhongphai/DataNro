@@ -316,6 +316,55 @@ public sealed class BoDocGoi : IBoDoc
             case 8:
                 loadItemNew(r);
                 break;
+            case 10:
+                DocBoCucMap(r);
+                break;
+        }
+    }
+
+    /// <summary>Bố cục ô của một map vừa về.</summary>
+    public event Action<MauMap> NhanBoCucMap;
+
+    /// <summary>Map đang xin - gói trả về không kèm id nên phải tự nhớ.</summary>
+    private int mapDangXin = -1;
+
+    /// <summary>
+    /// Xin bố cục ô của một map (gói <c>-28</c> nhánh 10, tức <c>requestMaptemplate</c>).
+    ///
+    /// <para>
+    /// Client chỉ gọi cái này khi trong tài nguyên máy không có sẵn tệp <c>/mymap/&lt;id&gt;</c>
+    /// - bản giải nén chỉ đóng gói bảy map, còn lại đều phải hỏi máy chủ. Hỏi thẳng thế này
+    /// thì không cần đi vào từng map.
+    /// </para>
+    /// </summary>
+    public void XinMauMap(int mapId)
+    {
+        mapDangXin = mapId;
+        var m = NotMap(10);
+        m.writer().writeByte(mapId);
+        Gui(m);
+    }
+
+    /// <summary>
+    /// Bố cục ô: <c>byte rộng, byte cao</c>, rồi <c>rộng*cao</c> byte, mỗi byte là chỉ số ô
+    /// trong bộ tile của map. Byte âm phải cộng 256 - chỉ số chạy tới 255.
+    /// </summary>
+    private void DocBoCucMap(myReader r)
+    {
+        try
+        {
+            var mm = new MauMap { mapId = mapDangXin };
+            mm.rong = 0xFF & r.readByte();
+            mm.cao = 0xFF & r.readByte();
+
+            mm.o = new int[mm.rong * mm.cao];
+            for (var i = 0; i < mm.o.Length; i++) mm.o[i] = 0xFF & r.readByte();
+
+            NhanBoCucMap?.Invoke(mm);
+        }
+        catch (Exception e)
+        {
+            log?.Invoke($"Đọc bố cục map {mapDangXin} hỏng: {e.Message}");
         }
     }
 

@@ -85,6 +85,7 @@ public static class Program
         Console.WriteLine("Đã ghi: " + Path.GetFullPath(thuMuc));
         Console.WriteLine("  " + phien.Data);
 
+        if (c.TaiMap) await TaiMapAsync(phien, c);
         if (c.TaiAnh) await TaiAnhAsync(phien, c);
         if (c.TaiQuai) await TaiQuaiAsync(phien, c);
 
@@ -126,6 +127,31 @@ public static class Program
     /// ra chuyện bỏ sót: vòng lặp chỉ dừng khi hỏi lại mà vẫn không ra thêm cái nào.
     /// </para>
     /// </summary>
+    /// <summary>
+    /// Xin bố cục ô của từng map. Nhẹ hơn hẳn ảnh với hình quái nên làm trước, và làm ngay
+    /// trên phiên vừa đăng nhập chứ không cần chia tài khoản.
+    /// </summary>
+    private static async Task TaiMapAsync(Phien phien, CauHinh c)
+    {
+        var thuMucMap = Path.Combine(c.Ra, c.NhaPhatHanh, "Maps");
+        var tatCa = Enumerable.Range(0, phien.Data.mapNames.Length).ToList();
+        if (tatCa.Count == 0) return;
+
+        var daCo = BoMap.DaCoTrenDia(thuMucMap);
+        var can = tatCa.Where(id => !daCo.Contains(id)).ToList();
+
+        Console.WriteLine($"Bố cục map: {tatCa.Count} map, đã có sẵn {daCo.Count}, cần hỏi {can.Count}");
+        if (can.Count == 0) return;
+
+        var bo = new BoMap(phien, thuMucMap);
+        using var het = new CancellationTokenSource(c.ChoQuaiMs);
+        var duoc = await bo.LayAsync(can, c.ChoMotMapMs, c.NhipMapMs, het.Token);
+        bo.Ghi();
+
+        Console.WriteLine($"  map: lấy thêm {duoc}, tổng cộng {bo.SoDaCo}/{tatCa.Count} " +
+                          $"→ {Path.GetFullPath(thuMucMap)}");
+    }
+
     private static async Task TaiAnhAsync(Phien phienDau, CauHinh c)
     {
         var thuMucAnh = Path.Combine(c.Ra, c.NhaPhatHanh, "Icons");

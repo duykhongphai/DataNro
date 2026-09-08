@@ -70,6 +70,15 @@ public class CauHinh
     /// <summary>Tải luôn hình sprite của từng mẫu quái.</summary>
     public bool TaiQuai { get; set; } = true;
 
+    /// <summary>Xin luôn bố cục ô của từng map (gói -28 nhánh 10).</summary>
+    public bool TaiMap { get; set; } = true;
+
+    /// <summary>Chờ bố cục một map bao lâu rồi bỏ qua sang map kế.</summary>
+    public int ChoMotMapMs { get; set; } = 4000;
+
+    /// <summary>Cách nhau bao lâu giữa hai lần xin bố cục map.</summary>
+    public int NhipMapMs { get; set; } = 120;
+
     /// <summary>Mỗi lượt hỏi tối đa bao nhiêu mẫu quái.</summary>
     public int SoQuaiMoiLuot { get; set; } = 40;
 
@@ -209,6 +218,8 @@ public class CauHinh
                 case "--khong-vao-map": c.VaoMap = false; break;
                 case "--khong-anh": c.TaiAnh = false; break;
                 case "--khong-quai": c.TaiQuai = false; break;
+                case "--khong-map": c.TaiMap = false; break;
+                case "--nhip-map": if (int.TryParse(KeTiep(), out var nm)) c.NhipMapMs = nm; break;
                 case "--lo-quai": if (int.TryParse(KeTiep(), out var lq)) c.SoQuaiMoiLuot = lq; break;
                 case "--nhip-quai": if (int.TryParse(KeTiep(), out var nq)) c.NhipQuaiMs = nq; break;
                 case "--nhip-anh": if (int.TryParse(KeTiep(), out var na)) c.NhipAnhMs = na; break;
