@@ -375,14 +375,20 @@ footer {
 }
 .phan-trang .vi-tri { color: var(--chu-mo); font-size: 13px; margin: 0 6px; }
 
-.tai-ve {
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  margin-bottom: 16px; padding: 14px 16px;
+/* Menu tải về nằm ngay trên thanh đầu. Trước để tuốt dưới chân trang thì chẳng ai cuộn tới,
+   mà bày thẳng bốn nút ra thanh thì chật - nên gói vào một nút thả xuống. */
+.tai-menu { position: relative; }
+.tai-menu > summary { list-style: none; cursor: pointer; }
+.tai-menu > summary::-webkit-details-marker { display: none; }
+.tai-menu[open] > summary { background: var(--nhan); border-color: var(--nhan); color: var(--nhan-chu); }
+.tai-hop {
+  position: absolute; z-index: 30; right: 0; top: calc(100% + 6px);
+  display: flex; flex-direction: column; align-items: stretch; gap: 8px;
+  min-width: 230px; padding: 12px;
   background: var(--noi); border: 1px solid var(--vien);
-  border-radius: var(--r); box-shadow: var(--bong-1);
+  border-radius: var(--r); box-shadow: var(--bong-2);
 }
-.tai-ve b { color: var(--chu); font-size: 14px; margin-right: 4px; }
-.tien-do { font: 500 13px var(--mono); color: var(--chu-vua); }
+.tien-do { font: 500 13px var(--mono); color: var(--chu-vua); text-align: center; }
 
 /* Sơ đồ map vẽ bằng canvas rồi nhúng thành ảnh: từng ô là một chấm 3px nên phải giữ nét
    vuông, để trình duyệt làm mượt thì thành một mảng xám nhoè. */
@@ -444,6 +450,16 @@ footer {
       <option value="ten">Sắp theo tên</option>
     </select>
     <a class="nut" id="link-json" href="#" target="_blank" rel="noopener">JSON gốc</a>
+    <details class="tai-menu" id="tai-menu">
+      <summary class="nut">Tải về ▾</summary>
+      <div class="tai-hop">
+        <button class="nut" data-tai="anh">Ảnh (icon + hình NPC)</button>
+        <button class="nut" data-tai="quai">Dữ liệu quái</button>
+        <button class="nut" data-tai="map">Dữ liệu map</button>
+        <button class="nut" data-tai="json">Toàn bộ JSON</button>
+        <span class="tien-do" id="tien-do"></span>
+      </div>
+    </details>
     <span class="dem" id="dem"></span>
   </div>
 </header>
@@ -454,14 +470,6 @@ footer {
 </main>
 
 <footer>
-  <div class="tai-ve">
-    <b>Tải về</b>
-    <button class="nut" data-tai="anh">Ảnh</button>
-    <button class="nut" data-tai="quai">Dữ liệu quái</button>
-    <button class="nut" data-tai="map">Dữ liệu map</button>
-    <button class="nut" data-tai="json">Toàn bộ JSON</button>
-    <span class="tien-do" id="tien-do"></span>
-  </div>
   Dữ liệu lấy thẳng từ máy chủ game, cập nhật tự động mỗi ngày ·
   <a href="https://github.com/duykhongphai/DataNro">Mã nguồn</a>
 </footer>
@@ -1161,6 +1169,15 @@ async function khoiDong() {
 
   document.querySelectorAll("[data-tai]").forEach((n) =>
     n.addEventListener("click", () => taiVe(n.dataset.tai)));
+
+  // Bấm ra ngoài thì cụp menu tải về lại - trừ lúc đang gói dở, đóng giữa chừng thì mất luôn
+  // dòng tiến độ mà việc vẫn chạy ngầm, người dùng tưởng hỏng.
+  document.addEventListener("click", (e) => {
+    const m = $("tai-menu");
+    if (!m.open || m.contains(e.target)) return;
+    if (m.querySelector("[data-tai]").disabled) return;
+    m.open = false;
+  });
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") return dongNgan();
