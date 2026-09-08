@@ -29,7 +29,22 @@ Chia thư mục con vì GitHub cắt danh sách thư mục ở 1000 tệp — t�
 chạy, chỉ là mở trên web thì nhìn như mất bớt.
 
 `TeaMobi/Icons/Sizes.json` là bảng kích thước của mọi ảnh, dạng `{"410":[56,56], ...}` — cần để
-tính hộp bao hình NPC mà không phải đợi ba mảnh tải xong.
+tính hộp bao hình NPC mà không phải đợi ba mảnh tải xong. `Icons/KhongCo.json` là danh sách id
+máy chủ đã xác nhận là không có ảnh, để lượt sau khỏi hỏi lại.
+
+`TeaMobi/Maps/MapTiles.json` là bố cục ô của từng map: `{"id":0,"w":52,"h":24,"tiles":[…]}`,
+mảng `tiles` dài `w*h`, mỗi số là chỉ số ảnh trong bộ tile của map, `0` là ô trống.
+
+### Nhiều tài khoản và chuyện lấy sạch ảnh
+
+Hạn mức ảnh tính theo **phiên**: mỗi phiên trả lời chừng trăm gói rồi im tới hết phiên. Một tài
+khoản thì chỉ còn cách ngắt ra đăng nhập lại, mỗi vòng mất gần một phút. Khai thêm tài khoản qua
+secret `NRO_TK_DS` (mỗi dòng `tài khoản|mật khẩu`) thì các phiên cùng rút chung một hàng chờ,
+thời gian chia đều cho số tài khoản.
+
+Không có gói nào liệt kê kho ảnh, nên muốn lấy sạch thì phải hỏi hết từng id — đó là việc của
+`NRO_ID_ANH_TOI_DA` (quét mù `0..N`). Không xong trong một hôm được, nhưng ảnh đã tải và id đã
+xác nhận là không có đều được nhớ lại, nên hôm sau đi tiếp từ chỗ dở chứ không hỏi lại từ đầu.
 
 | Máy chủ | Thư mục |
 |---|---|
@@ -227,6 +242,18 @@ vẽ ra gì.
 
 Bốn mẫu quái (`28`, `29`, `30`, `85`) thì máy chủ không trả lời gói xin hình, nên không có
 tấm sprite nào cả.
+
+### Bố cục map
+
+`Maps.json` chỉ có id với tên — DataNRO của ElectroHeavenVN cũng vậy, họ không lấy phần vẽ map.
+Bố cục ô thì client nạp từ tệp `/mymap/<id>` đóng gói sẵn, mà bản giải nén chỉ có bảy map; thiếu
+thì nó gọi `Service.requestMaptemplate` — **gói `-28` nhánh 10**, gửi lên một byte id, máy chủ
+trả về `byte rộng, byte cao` rồi `rộng*cao` byte chỉ số ô. Hỏi thẳng thế này thì không cần đi
+vào từng map. Lấy được 185/187.
+
+Chưa ghép được ảnh nền thật vì còn thiếu `tileID` — số hiệu bộ tile — thứ máy chủ chỉ gửi kèm
+gói vào map (`-24`); ảnh tile thì nằm trong tài nguyên client (`res/x4/t/<tileID>/`) chứ không
+xin qua gói ảnh được. Trang web hiện vẽ sơ đồ ô, đủ thấy hình dáng map và nền đất nằm đâu.
 
 ### Ảnh: máy chủ chỉ cho khoảng một trăm mỗi phiên
 

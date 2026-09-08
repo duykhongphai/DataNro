@@ -374,6 +374,14 @@ footer {
 .tai-ve b { color: var(--chu); font-size: 14px; margin-right: 4px; }
 .tien-do { font: 500 13px var(--mono); color: var(--chu-vua); }
 
+/* Sơ đồ map vẽ bằng canvas rồi nhúng thành ảnh: từng ô là một chấm 3px nên phải giữ nét
+   vuông, để trình duyệt làm mượt thì thành một mảng xám nhoè. */
+.so-do-map {
+  display: block; width: 100%; margin-top: 12px;
+  border: 1px solid var(--vien); border-radius: 8px;
+  background: var(--chim); image-rendering: pixelated;
+}
+
 @media (max-width: 900px) {
   .hang-1 { height: auto; padding-top: 10px; padding-bottom: 10px; flex-wrap: wrap; }
   nav.tab { order: 3; width: 100%; overflow-x: auto; margin-left: 0; }
@@ -745,6 +753,21 @@ async function layKichThuoc() {
   return d;
 }
 
+/** Bố cục ô của mọi map, khoá theo id. Thiếu tệp thì mục map vẫn chạy, chỉ là không có sơ đồ. */
+async function layBoCucMap() {
+  const khoa = `${T.nph}/Maps/MapTiles.json`;
+  if (kho.has(khoa)) return kho.get(khoa);
+  let ds = [];
+  try {
+    ds = await docJson(khoa);
+  } catch {
+    // chưa chạy lượt lấy bố cục map
+  }
+  const m = new Map(ds.map((x) => [x.id, x]));
+  kho.set(khoa, m);
+  return m;
+}
+
 async function layParts() {
   const khoa = `${T.nph}/${T.sv}/Parts.json`;
   if (kho.has(khoa)) return kho.get(khoa);
@@ -842,11 +865,15 @@ const VE = {
       <span class="nho-phu">${x.type}</span>
     </article>`).join(""),
 
-  map: (ds) => `<div class="o-dau"><span class="c-id">Id</span>
-    <span class="c-ten">Tên map</span></div>` +
-    ds.map((x, i) => `<article class="o-nho" data-i="${i}">
-      ${chep(x.id)}<span class="nho-ten">${thoat(x.name)}</span>
-    </article>`).join("")
+  map: (ds, bang) => `<div class="o-dau"><span class="c-id">Id</span>
+    <span class="c-ten">Tên map</span><span class="c-loai">Cỡ lưới</span></div>` +
+    ds.map((x, i) => {
+      const bc = bang?.get?.(x.id);
+      return `<article class="o-nho" data-i="${i}">
+        ${chep(x.id)}<span class="nho-ten">${thoat(x.name)}</span>
+        <span class="nho-phu">${bc ? `${bc.w}×${bc.h}` : "—"}</span>
+      </article>`;
+    }).join("")
 };
 
 /**
@@ -927,10 +954,16 @@ const CHI_TIET = {
     anh: -1, ten: x.name, phu: `Option vật phẩm · id ${x.id}`,
     dong: dongTT("Id option", x.id) + dongTT("Loại", x.type, false) + dongTT("Tên", x.name)
   }),
-  map: (x) => ({
-    anh: -1, ten: x.name, phu: `Map · id ${x.id}`,
-    dong: dongTT("Id map", x.id) + dongTT("Tên map", x.name)
-  })
+  map: (x) => {
+    const bc = phuHienTai.get?.(x.id);
+    return {
+      anh: -1, ten: x.name, phu: `Map · id ${x.id}`,
+      dong: dongTT("Id map", x.id) + dongTT("Tên map", x.name) +
+        (bc ? dongTT("Cỡ lưới", `${bc.w} × ${bc.h} ô`, false) +
+          dongTT("Cỡ thật", `${bc.w * 24} × ${bc.h * 24} px`, false) : "") +
+        veSoDoMap(bc)
+    };
+  }
 };
 
 function moNgan(i) {
@@ -1043,6 +1076,7 @@ async function ve() {
   // Mỗi mục cần một bảng phụ khác nhau: NPC cần bảng part, quái cần bảng khung.
   const phu = T.muc === "npc" ? { parts: await layParts(), co: await layKichThuoc() }
     : T.muc === "quai" ? await layQuai()
+    : T.muc === "map" ? await layBoCucMap()
     : [];
   phuHienTai = phu;
   if (phien !== phienVe) return;
@@ -1179,6 +1213,34 @@ async function khoiDong() {
       $("tim").focus();
     }
   });
+}
+
+/**
+ * Sơ đồ một map: mỗi ô nền là một chấm.
+ *
+ * <p>Đây đúng mảng <c>TileMap.maps</c> mà client nạp để vẽ nền - ô khác 0 là có gạch, 0 là
+ * trống. Chưa ghép được ảnh tile thật vì còn thiếu <c>tileID</c> (số hiệu bộ tile), thứ máy
+ * chủ chỉ gửi kèm gói vào map; ảnh tile thì nằm trong tài nguyên client chứ không xin qua gói
+ * ảnh được. Nhưng chừng này đã đủ thấy hình dáng map, nền đất nằm đâu, map rộng hẹp ra sao.</p>
+ */
+function veSoDoMap(bc) {
+  if (!bc) return "";
+
+  const O = 3;
+  const rong = bc.w * O, cao = bc.h * O;
+  const c = document.createElement("canvas");
+  c.width = rong;
+  c.height = cao;
+
+  const g = c.getContext("2d");
+  g.fillStyle = "#eef1f6";
+  g.fillRect(0, 0, rong, cao);
+  g.fillStyle = "#3c4859";
+  for (let y = 0; y < bc.h; y++)
+    for (let x = 0; x < bc.w; x++)
+      if (bc.tiles[y * bc.w + x]) g.fillRect(x * O, y * O, O, O);
+
+  return `<img class="so-do-map" alt="Sơ đồ map ${bc.id}" src="${c.toDataURL()}">`;
 }
 
 // ══════════ đóng gói zip ══════════
