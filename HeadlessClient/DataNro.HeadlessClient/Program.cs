@@ -189,7 +189,9 @@ public static class Program
                           $"cần hỏi {canHoi.Count}");
         if (canHoi.Count == 0) return;
 
-        var tho = c.DsTaiKhoan.Take(Math.Max(1, c.SoPhienSongSong)).ToList();
+        var tho = c.SoPhienSongSong > 0
+            ? c.DsTaiKhoan.Take(c.SoPhienSongSong).ToList()
+            : c.DsTaiKhoan.ToList();
         Console.WriteLine($"  chạy {tho.Count} phiên song song: " +
                           string.Join(", ", tho.Select(x => x.tk)));
 

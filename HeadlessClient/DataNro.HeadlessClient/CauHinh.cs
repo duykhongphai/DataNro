@@ -102,8 +102,12 @@ public class CauHinh
     /// </summary>
     public int IdAnhToiDa { get; set; }
 
-    /// <summary>Số phiên chạy song song, mỗi phiên một tài khoản. Nhiều hơn số tài khoản thì bị cắt xuống.</summary>
-    public int SoPhienSongSong { get; set; } = 4;
+    /// <summary>
+    /// Số phiên chạy song song, mỗi phiên một tài khoản. <b>0 nghĩa là dùng hết</b> số tài
+    /// khoản đã khai - khai bao nhiêu chạy bấy nhiêu. Đặt số cụ thể để hãm lại nếu máy chủ
+    /// khó chịu với chuyện nhiều phiên cùng một địa chỉ.
+    /// </summary>
+    public int SoPhienSongSong { get; set; }
 
     /// <summary>
     /// Cách nhau bao lâu giữa hai lần hỏi ảnh. Giao diện các tool đang để 70ms; ở đây nhanh
