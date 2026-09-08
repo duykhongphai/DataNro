@@ -126,7 +126,10 @@ td.so { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var
 td.ten { font-weight: 600; }
 td.mo { color: var(--chu-mo); max-width: 460px; }
 .anh {
-  width: 32px; height: 32px; object-fit: contain; image-rendering: pixelated;
+  /* Ảnh lấy ở mức phóng 4 nên to gấp bốn lần cỡ trong game; ở đây bị THU NHỎ lại 32px.
+     Vì vậy không dùng image-rendering: pixelated - cái đó để phóng to ảnh pixel nhỏ, đem
+     thu nhỏ thì chỉ ra răng cưa. Để trình duyệt tự lọc mượt, màn hình HiDPI còn được lợi. */
+  width: 32px; height: 32px; object-fit: contain;
   background: var(--nen-chim); border-radius: 6px; padding: 2px;
 }
 .anh.trong { visibility: hidden; }

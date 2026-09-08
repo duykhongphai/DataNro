@@ -36,6 +36,18 @@ public sealed class BoDocGoi : IBoDoc
 
     public int LoaiClient { get; set; } = 3;
 
+    /// <summary>
+    /// Mức phóng của client (<c>mGraphics.zoomLevel</c> bên bản gốc), 1..4. Máy chủ dùng con
+    /// số này để chọn bộ ảnh gửi xuống, nên xin <b>4</b> là được ảnh nét nhất.
+    ///
+    /// <para>
+    /// Client thật đặt mức này theo cỡ màn hình (<c>MotherCanvas</c>). Nó chỉ ảnh hưởng ảnh
+    /// và cách vẽ - toạ độ trong gói tin vẫn là đơn vị game, không nhân theo mức phóng - nên
+    /// khai 4 không làm lệch thứ gì.
+    /// </para>
+    /// </summary>
+    public int MucPhongAnh { get; set; } = 4;
+
     /// <summary>Máy chủ báo đăng nhập thành công (gói messageNotMap nhánh 4).</summary>
     public bool DaDangNhap { get; private set; }
 
@@ -222,7 +234,7 @@ public sealed class BoDocGoi : IBoDoc
         var m = NotLogin(2);
         var w = m.writer();
         w.writeByte(LoaiClient);
-        w.writeByte(1);
+        w.writeByte(MucPhongAnh);
         w.writeBoolean(false);
         w.writeInt(1280);
         w.writeInt(720);
