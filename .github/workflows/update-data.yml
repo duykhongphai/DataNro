@@ -213,8 +213,26 @@ jobs:
           fi
           git commit -m "data: cập nhật tự động $(date -u +%Y-%m-%d)"
 
-          # Lượt chạy mất mười lăm hai mươi phút, thừa thời gian để có người đẩy commit khác
-          # lên trong lúc đó (sửa trang chẳng hạn). Không kéo về trước thì push bị từ chối và
-          # cả lượt đổ dữ liệu đổ sông đổ bể ở đúng bước cuối.
-          git pull --rebase origin main
-          git push
+          # Một lượt chạy mất mười lăm hai mươi phút - thừa thời gian để có người đẩy commit
+          # khác lên trong lúc đó. Đẩy trước đã, bị từ chối thì mới kéo về rồi thử lại; lặp
+          # vài lần vì kéo xong vẫn có thể bị chen tiếp.
+          #
+          # Không kéo trước rồi mới đẩy: lần nào cũng phải fetch mà chín mươi chín phần trăm
+          # là chẳng có gì để kéo.
+          for lan in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "Đã đẩy."
+              exit 0
+            fi
+
+            echo "::warning::Đẩy bị từ chối (lần $lan) - kéo bản mới về rồi thử lại"
+            if ! git pull --rebase origin main; then
+              git rebase --abort || true
+              echo "::error::Không tự gộp được với bản trên GitHub, phải xử lí tay"
+              exit 1
+            fi
+            sleep 5
+          done
+
+          echo "::error::Thử đẩy ba lần đều bị chen, bỏ cuộc"
+          exit 1
