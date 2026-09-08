@@ -242,11 +242,21 @@ public class CauHinh
 
         if (c.Port <= 0) c.Port = 14445;
 
-        // Tài khoản chính luôn là thợ đầu tiên; danh sách phụ chỉ bổ sung, và bỏ trùng để
-        // không có hai phiên cùng đăng nhập một tài khoản (máy chủ đá phiên cũ ra).
+        // Khai hết vào danh sách, không đặt riêng tài khoản chính, cũng chạy: lấy dòng đầu làm
+        // tài khoản chính. Phiên đầu tiên - phiên đi lấy bảng dữ liệu - dùng tài khoản này.
+        if (string.IsNullOrWhiteSpace(c.TaiKhoan) && c.DsTaiKhoan.Count > 0)
+        {
+            c.TaiKhoan = c.DsTaiKhoan[0].tk;
+            c.MatKhau = c.DsTaiKhoan[0].mk;
+        }
+
+        // Tài khoản chính luôn là thợ đầu tiên; danh sách chỉ bổ sung, và bỏ trùng để không có
+        // hai phiên cùng đăng nhập một tài khoản (máy chủ đá phiên cũ ra).
         if (!string.IsNullOrWhiteSpace(c.TaiKhoan) && !string.IsNullOrWhiteSpace(c.MatKhau))
+        {
             c.DsTaiKhoan.RemoveAll(x => string.Equals(x.tk, c.TaiKhoan, StringComparison.OrdinalIgnoreCase));
-        c.DsTaiKhoan.Insert(0, (c.TaiKhoan, c.MatKhau));
+            c.DsTaiKhoan.Insert(0, (c.TaiKhoan, c.MatKhau));
+        }
 
         return c;
 
@@ -260,8 +270,10 @@ public class CauHinh
     /// <summary>Lỗi cấu hình dễ thấy, trả về null là hợp lệ.</summary>
     public string LoiCauHinh()
     {
-        if (string.IsNullOrWhiteSpace(TaiKhoan)) return "Chưa có tài khoản (--tk hoặc NRO_TK hoặc trường 4 của DATA)";
-        if (string.IsNullOrWhiteSpace(MatKhau)) return "Chưa có mật khẩu (--mk hoặc NRO_MK hoặc trường 5 của DATA)";
+        if (string.IsNullOrWhiteSpace(TaiKhoan))
+            return "Chưa có tài khoản: cho --tk, hoặc NRO_TK, hoặc một dòng trong NRO_TK_DS";
+        if (string.IsNullOrWhiteSpace(MatKhau))
+            return "Chưa có mật khẩu: cho --mk, hoặc NRO_MK, hoặc phần sau dấu | trong NRO_TK_DS";
         if (string.IsNullOrWhiteSpace(Host) && string.IsNullOrWhiteSpace(TenMayChu))
             return "Chưa biết nối vào đâu: cho --host hoặc --maychu";
         if (string.IsNullOrWhiteSpace(TenThuMuc)) return "Chưa có tên thư mục dữ liệu (--thumuc)";

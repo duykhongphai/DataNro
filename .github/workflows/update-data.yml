@@ -88,14 +88,17 @@ jobs:
           NRO_TK_DS: ${{ secrets.NRO_TK_DS }}
         run: |
           set -u
-          if [ -z "${NRO_TAIKHOAN:-}" ]; then
-            echo "::error::Thiếu secret NRO_TAIKHOAN (tài khoản|mật khẩu)"
+          if [ -z "${NRO_TAIKHOAN:-}" ] && [ -z "${NRO_TK_DS:-}" ]; then
+            echo "::error::Chưa có tài khoản nào: đặt secret NRO_TK_DS (mỗi dòng tài_khoản|mật_khẩu), hoặc NRO_TAIKHOAN"
             exit 1
           fi
 
-          # Một tài khoản dùng cho mọi máy chủ; trường proxy thứ ba bỏ trống được.
-          IFS='|' read -r NRO_TK NRO_MK NRO_PROXY <<< "$NRO_TAIKHOAN"
-          export NRO_TK NRO_MK NRO_PROXY
+          # Khai hết vào NRO_TK_DS cũng chạy - client lấy dòng đầu làm tài khoản chính. Chỉ khi
+          # có NRO_TAIKHOAN mới tách ra, vì trường proxy thứ ba nằm trong đó.
+          if [ -n "${NRO_TAIKHOAN:-}" ]; then
+            IFS='|' read -r NRO_TK NRO_MK NRO_PROXY <<< "$NRO_TAIKHOAN"
+            export NRO_TK NRO_MK NRO_PROXY
+          fi
 
           # Ghi thẳng vào thư mục làm việc: repo này vừa là mã nguồn vừa là nơi chứa dữ liệu,
           # nên ảnh của lần trước đã có sẵn và chỉ phải hỏi ảnh mới.
