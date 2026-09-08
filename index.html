@@ -5,14 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DataNro — dữ liệu Ngọc Rồng Online</title>
 <meta name="description" content="Tra cứu vật phẩm, quái, NPC, kĩ năng và bản đồ của Ngọc Rồng Online. Dữ liệu lấy thẳng từ máy chủ, cập nhật tự động mỗi ngày.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🐉</text></svg>">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3Cpath id='s' d='M0-1 .225-.309H.951L.363.118.588.809 0 .382-.588.809-.363.118-.951-.309H-.225Z'/%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='15' fill='%23f0a01e'/%3E%3Cg fill='%23c0392b'%3E%3Cuse href='%23s' transform='translate(16 9.5) scale(3.4)'/%3E%3Cuse href='%23s' transform='translate(9.5 17) scale(3.4)'/%3E%3Cuse href='%23s' transform='translate(22.5 17) scale(3.4)'/%3E%3Cuse href='%23s' transform='translate(16 24) scale(3.4)'/%3E%3C/g%3E%3C/svg%3E">
 <style>
 /* ══════════ bảng màu ══════════ */
 :root {
   --nen:      #f2f4f8;
   --noi:      #ffffff;
   --chim:     #e9edf3;
-  --cao:      #ffffff;
   --vien:     #dbe1ea;
   --vien-mo:  #e8ecf2;
   --chu:      #0f151d;
@@ -31,12 +30,18 @@
   --bong-3:   0 16px 48px rgba(15, 21, 29, .18);
   --mono: ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono", Consolas, monospace;
   --r: 12px;
+
+  /* Biểu tượng vẽ bằng SVG, dán vào CSS qua mask nên ăn theo màu chữ và không đẻ thêm
+     hàng nghìn thẻ svg trong DOM. */
+  --ic-chep: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='9' y='9' width='12' height='12' rx='2'/%3E%3Cpath d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'/%3E%3C/svg%3E");
+  --ic-xong: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+  --ic-mui: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 6 6 6-6 6'/%3E%3C/svg%3E");
+  --ic-vo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Cpath d='m3 16 5-5 4 4'/%3E%3Ccircle cx='15' cy='9' r='1.6'/%3E%3C/svg%3E");
 }
 html[data-theme="toi"] {
   --nen:      #0a0e14;
   --noi:      #121820;
   --chim:     #171e28;
-  --cao:      #1b2430;
   --vien:     #26313f;
   --vien-mo:  #1d2632;
   --chu:      #eaeff6;
@@ -74,14 +79,14 @@ a { color: var(--nhan); }
   border-bottom: 1px solid var(--vien);
 }
 .hang {
-  max-width: 1500px; margin: 0 auto; padding: 0 20px;
+  max-width: 1560px; margin: 0 auto; padding: 0 20px;
   display: flex; align-items: center; gap: 14px;
 }
 .hang-1 { height: 60px; }
 .hang-2 { height: 52px; border-top: 1px solid var(--vien-mo); gap: 10px; }
 
 .hieu { display: flex; align-items: center; gap: 10px; margin-right: 4px; }
-.hieu .rong { font-size: 24px; line-height: 1; }
+.hieu .cau { width: 26px; height: 26px; flex: none; }
 .hieu b { font-size: 19px; letter-spacing: -.03em; }
 .hieu i {
   font-style: normal; font-size: 12px; color: var(--chu-mo);
@@ -97,12 +102,11 @@ nav.tab button {
 }
 nav.tab button:hover { background: var(--chim); color: var(--chu); }
 nav.tab button[aria-selected="true"] {
-  background: var(--nhan); color: var(--nhan-chu); border-color: transparent;
-  box-shadow: var(--bong-1);
+  background: var(--nhan); color: var(--nhan-chu); box-shadow: var(--bong-1);
 }
 
-.o-tim { position: relative; flex: 1; max-width: 460px; }
-.o-tim svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--chu-mo); }
+.o-tim { position: relative; flex: 1; max-width: 440px; }
+.o-tim > svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--chu-mo); }
 .o-tim kbd {
   position: absolute; right: 9px; top: 50%; transform: translateY(-50%);
   font: 11px/1 var(--mono); color: var(--chu-mo);
@@ -114,14 +118,11 @@ input[type="search"] {
   background: var(--noi); border: 1px solid var(--vien);
   border-radius: 9px; padding: 8px 42px 8px 34px;
 }
-input[type="search"]::-webkit-search-cancel-button { filter: grayscale(1) opacity(.6); }
 select {
   font: inherit; font-size: 14px; color: var(--chu); background: var(--noi);
   border: 1px solid var(--vien); border-radius: 9px; padding: 8px 10px;
 }
-:is(select, input, button, a):focus-visible {
-  outline: 2px solid var(--nhan); outline-offset: 2px;
-}
+:is(select, input, button, a):focus-visible { outline: 2px solid var(--nhan); outline-offset: 2px; }
 
 .nut {
   display: inline-flex; align-items: center; gap: 7px;
@@ -130,125 +131,138 @@ select {
   font: inherit; font-size: 13px; font-weight: 550; white-space: nowrap;
 }
 .nut:hover { background: var(--chim); color: var(--chu); border-color: var(--chu-mo); }
+.nut svg { flex: none; }
 .nut-tron { padding: 8px; width: 37px; justify-content: center; }
 
 .dem { margin-left: auto; color: var(--chu-mo); font-size: 13px; white-space: nowrap; }
 .dem b { color: var(--chu); font-variant-numeric: tabular-nums; font-weight: 650; }
 
-/* ══════════ khung nội dung ══════════ */
-main { max-width: 1500px; margin: 0 auto; padding: 18px 20px 80px; }
-.khung {
-  background: var(--noi); border: 1px solid var(--vien);
-  border-radius: var(--r); box-shadow: var(--bong-2); overflow: hidden;
-}
-.cuon { overflow: auto; max-height: calc(100vh - 176px); overscroll-behavior: contain; }
+/* ══════════ vùng thẻ ══════════ */
+main { max-width: 1560px; margin: 0 auto; padding: 18px 20px 80px; }
 
-/* ══════════ bảng ══════════ */
-table { border-collapse: separate; border-spacing: 0; width: 100%; }
-thead th {
-  position: sticky; top: 0; z-index: 5;
-  background: var(--chim); color: var(--chu-mo);
-  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
-  text-align: left; white-space: nowrap;
-  padding: 10px 14px; border-bottom: 1px solid var(--vien);
+.dan {
+  display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
 }
-tbody td { padding: 9px 14px; border-bottom: 1px solid var(--vien-mo); vertical-align: middle; }
-tbody tr { cursor: pointer; }
-tbody tr:hover td { background: var(--nhan-mo); }
-tbody tr[aria-selected="true"] td { background: var(--nhan-mo); box-shadow: inset 3px 0 0 var(--nhan); }
-td.so { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
-td.hep { width: 1%; }
+/* Map và option chỉ có id với tên: để thẻ rộng bằng thẻ vật phẩm thì trống hoác. */
+.dan.gon { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
 
-.ten-chinh { font-weight: 650; font-size: 15px; letter-spacing: -.01em; }
-.ten-phu { color: var(--chu-mo); font-size: 13px; margin-top: 1px; }
+.the {
+  background: var(--noi); border: 1px solid var(--vien); border-radius: var(--r);
+  box-shadow: var(--bong-1); cursor: pointer;
+  display: flex; flex-direction: column; overflow: hidden;
+  transition: border-color .12s, box-shadow .12s, transform .12s;
+}
+.the:hover { border-color: var(--nhan); box-shadow: var(--bong-2); transform: translateY(-1px); }
+.the[aria-selected="true"] { border-color: var(--nhan); box-shadow: 0 0 0 3px var(--nhan-mo), var(--bong-2); }
+
+.the-tren { display: flex; gap: 14px; padding: 14px; align-items: flex-start; }
+.the-chu { min-width: 0; flex: 1; }
+.the-ten {
+  font-weight: 650; font-size: 16px; letter-spacing: -.015em; line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.the-mo {
+  color: var(--chu-mo); font-size: 13px; margin-top: 3px; line-height: 1.45;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.the-chip { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+.the-duoi {
+  margin-top: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  padding: 10px 14px; background: var(--chim); border-top: 1px solid var(--vien-mo);
+}
+.the-so { margin-left: auto; font: 600 13px var(--mono); color: var(--chu-vua); white-space: nowrap; }
+.the-so em { font-style: normal; color: var(--chu-mo); font-weight: 500; }
 
 /* ══════════ ảnh ══════════ */
 .o-anh {
-  width: 52px; height: 52px; border-radius: 10px;
+  width: 88px; height: 88px; border-radius: 12px; flex: none;
   background: var(--chim); border: 1px solid var(--vien-mo);
-  display: grid; place-items: center; overflow: hidden; flex: none;
+  display: grid; place-items: center; overflow: hidden;
 }
-.o-anh img { max-width: 46px; max-height: 46px; object-fit: contain; }
-.o-anh.trong::after { content: "?"; color: var(--chu-mo); font: 600 15px var(--mono); }
+.o-anh img { max-width: 80px; max-height: 80px; object-fit: contain; }
 .o-anh.trong img { display: none; }
-.bo-anh { display: flex; gap: 5px; }
-.bo-anh .o-anh { width: 46px; height: 46px; border-radius: 9px; }
-.bo-anh .o-anh img { max-width: 40px; max-height: 40px; }
+.o-anh.trong::after {
+  content: ""; width: 28px; height: 28px; background: var(--chu-mo); opacity: .45;
+  -webkit-mask: var(--ic-vo) center/contain no-repeat; mask: var(--ic-vo) center/contain no-repeat;
+}
+.bo-anh { display: flex; gap: 7px; margin-top: 11px; }
+.bo-anh .o-anh { width: 72px; height: 72px; }
+.bo-anh .o-anh img { max-width: 64px; max-height: 64px; }
+.bo-anh .o-anh.trong::after { width: 22px; height: 22px; }
 
 /* ══════════ chip ══════════ */
 .chip {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 3px 9px; border-radius: 7px;
+  display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 7px;
   font-size: 12px; font-weight: 600; white-space: nowrap;
-  background: var(--chim); color: var(--chu-vua); border: 1px solid transparent;
+  background: var(--chim); color: var(--chu-vua);
 }
-.chip.dat { color: var(--dat); background: color-mix(in srgb, var(--dat) 13%, transparent); }
-.chip.nam { color: var(--nam); background: color-mix(in srgb, var(--nam) 13%, transparent); }
-.chip.xay { color: var(--xay); background: color-mix(in srgb, var(--xay) 15%, transparent); }
-.chip.xam { color: var(--xam); background: color-mix(in srgb, var(--xam) 13%, transparent); }
+.chip.dat { color: var(--dat); background: color-mix(in srgb, var(--dat) 14%, transparent); }
+.chip.nam { color: var(--nam); background: color-mix(in srgb, var(--nam) 14%, transparent); }
+.chip.xay { color: var(--xay); background: color-mix(in srgb, var(--xay) 16%, transparent); }
+.chip.xam { color: var(--xam); background: color-mix(in srgb, var(--xam) 14%, transparent); }
 
 /* Bấm vào là chép — thứ dùng nhiều nhất của trang này. */
 .chep {
   font-family: var(--mono); font-size: 13px; font-weight: 600;
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 3px 8px; border-radius: 7px; cursor: pointer;
-  background: var(--chim); color: var(--chu); border: 1px solid var(--vien-mo);
+  padding: 4px 9px; border-radius: 7px; cursor: pointer;
+  background: var(--noi); color: var(--chu); border: 1px solid var(--vien);
   transition: background .1s, border-color .1s, color .1s;
 }
 .chep:hover { background: var(--nhan); color: var(--nhan-chu); border-color: var(--nhan); }
 .chep::after {
-  content: "⧉"; font-size: 12px; opacity: 0; transition: opacity .1s;
+  content: ""; width: 12px; height: 12px; flex: none; background: currentColor;
+  -webkit-mask: var(--ic-chep) center/contain no-repeat; mask: var(--ic-chep) center/contain no-repeat;
+  opacity: 0; transition: opacity .1s;
 }
-.chep:hover::after { opacity: .75; }
+.chep:hover::after { opacity: .8; }
 .chep.xong { background: var(--dat); border-color: var(--dat); color: #fff; }
-.chep.xong::after { content: "✓"; opacity: 1; }
-
-/* ══════════ lưới thẻ (map, option) ══════════ */
-.luoi {
-  display: grid; gap: 8px; padding: 14px;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+.chep.xong::after {
+  opacity: 1;
+  -webkit-mask-image: var(--ic-xong); mask-image: var(--ic-xong);
 }
-.the-nho {
-  display: flex; align-items: center; gap: 10px;
-  padding: 9px 11px; border-radius: 10px;
-  background: var(--chim); border: 1px solid transparent; cursor: pointer;
-}
-.the-nho:hover { border-color: var(--nhan); background: var(--nhan-mo); }
-.the-nho .sid {
-  font: 600 12px var(--mono); color: var(--chu-mo);
-  min-width: 40px; text-align: right; flex: none;
-}
-.the-nho .stn { font-weight: 550; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chep em { font-style: normal; color: var(--chu-mo); font-weight: 500; }
+.chep:hover em, .chep.xong em { color: inherit; opacity: .85; }
 
 /* ══════════ kĩ năng ══════════ */
 .lop-dau {
-  position: sticky; top: 0; z-index: 4;
-  display: flex; align-items: center; gap: 10px;
-  padding: 11px 16px; background: var(--chim);
-  border-bottom: 1px solid var(--vien); border-top: 1px solid var(--vien);
-  font-size: 13px; color: var(--chu-mo);
+  grid-column: 1 / -1;
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 16px 4px 2px; font-size: 13px; color: var(--chu-mo);
 }
-.lop-dau:first-child { border-top: 0; }
-.lop-dau b { color: var(--chu); font-size: 16px; letter-spacing: -.01em; }
+.lop-dau b { color: var(--chu); font-size: 18px; letter-spacing: -.02em; }
 
-details.chieu { border-bottom: 1px solid var(--vien-mo); }
+details.chieu { grid-column: 1 / -1; }
 details.chieu > summary {
-  padding: 10px 16px; cursor: pointer; display: flex; gap: 12px; align-items: center;
-  list-style: none;
+  display: flex; gap: 14px; align-items: center; cursor: pointer; list-style: none;
+  padding: 12px 14px; background: var(--noi);
+  border: 1px solid var(--vien); border-radius: var(--r); box-shadow: var(--bong-1);
 }
 details.chieu > summary::-webkit-details-marker { display: none; }
-details.chieu > summary:hover { background: var(--nhan-mo); }
-details.chieu > summary::before {
-  content: "›"; color: var(--chu-mo); font-size: 19px; width: 12px;
-  transition: transform .15s; flex: none;
+details.chieu > summary:hover { border-color: var(--nhan); }
+details.chieu[open] > summary { border-radius: var(--r) var(--r) 0 0; border-bottom-color: transparent; }
+details.chieu > summary::after {
+  content: ""; width: 18px; height: 18px; margin-left: auto; flex: none;
+  background: var(--chu-mo); transition: transform .15s;
+  -webkit-mask: var(--ic-mui) center/contain no-repeat; mask: var(--ic-mui) center/contain no-repeat;
 }
-details.chieu[open] > summary::before { transform: rotate(90deg); }
-.cap-bang { padding: 4px 16px 16px 56px; }
-.cap-bang table { font-size: 13px; }
-.cap-bang thead th { position: static; background: transparent; padding: 6px 10px; }
-.cap-bang td { padding: 6px 10px; }
-.cap-bang tbody tr { cursor: default; }
-.cap-bang tbody tr:hover td { background: transparent; }
+details.chieu[open] > summary::after { transform: rotate(90deg); }
+details.chieu > summary .o-anh { width: 60px; height: 60px; border-radius: 10px; }
+details.chieu > summary .o-anh img { max-width: 54px; max-height: 54px; }
+.cap-hop {
+  border: 1px solid var(--vien); border-top: 0; border-radius: 0 0 var(--r) var(--r);
+  background: var(--noi); overflow-x: auto;
+}
+.cap-hop table { border-collapse: collapse; width: 100%; font-size: 13px; }
+.cap-hop th {
+  text-align: left; padding: 9px 14px; color: var(--chu-mo); white-space: nowrap;
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  border-bottom: 1px solid var(--vien);
+}
+.cap-hop td { padding: 7px 14px; border-bottom: 1px solid var(--vien-mo); white-space: nowrap; }
+.cap-hop tr:last-child td { border-bottom: 0; }
+.cap-hop td.so { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 
 /* ══════════ ngăn chi tiết ══════════ */
 .man {
@@ -257,33 +271,31 @@ details.chieu[open] > summary::before { transform: rotate(90deg); }
 }
 .man.hien { opacity: 1; pointer-events: auto; }
 aside.ngan {
-  position: fixed; top: 0; right: 0; bottom: 0; z-index: 41; width: 400px; max-width: 92vw;
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 41; width: 410px; max-width: 92vw;
   background: var(--noi); border-left: 1px solid var(--vien); box-shadow: var(--bong-3);
   transform: translateX(102%); transition: transform .22s cubic-bezier(.32, .72, 0, 1);
   display: flex; flex-direction: column;
 }
 aside.ngan.hien { transform: none; }
 .ngan-dau {
-  display: flex; align-items: flex-start; gap: 13px;
+  display: flex; align-items: flex-start; gap: 14px;
   padding: 18px 18px 15px; border-bottom: 1px solid var(--vien);
 }
-.ngan-dau .o-anh { width: 64px; height: 64px; }
-.ngan-dau .o-anh img { max-width: 58px; max-height: 58px; }
-.ngan-dau h2 { margin: 0; font-size: 18px; letter-spacing: -.02em; }
-.ngan-dau p { margin: 3px 0 0; color: var(--chu-mo); font-size: 13px; }
+.ngan-dau h2 { margin: 0; font-size: 19px; letter-spacing: -.02em; }
+.ngan-dau p { margin: 4px 0 0; color: var(--chu-mo); font-size: 13px; }
 .ngan-than { overflow: auto; padding: 6px 0; flex: 1; }
 .dong-tt {
   display: flex; align-items: center; gap: 12px;
-  padding: 8px 18px; border-bottom: 1px solid var(--vien-mo);
+  padding: 9px 18px; border-bottom: 1px solid var(--vien-mo);
 }
 .dong-tt:last-child { border-bottom: 0; }
-.dong-tt .nhan-tt { color: var(--chu-mo); font-size: 13px; flex: none; width: 122px; }
+.dong-tt .nhan-tt { color: var(--chu-mo); font-size: 13px; flex: none; width: 128px; }
 .dong-tt .gia-tt { flex: 1; min-width: 0; word-break: break-word; font-size: 14px; }
 .ngan-chan { padding: 13px 18px; border-top: 1px solid var(--vien); display: flex; gap: 9px; }
 .ngan-chan .nut { flex: 1; justify-content: center; }
 
 /* ══════════ vặt ══════════ */
-.trong-rong { padding: 60px 20px; text-align: center; color: var(--chu-mo); }
+.trong-rong { grid-column: 1 / -1; padding: 70px 20px; text-align: center; color: var(--chu-mo); }
 .trong-rong.loi { color: var(--do); }
 #banh {
   position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 18px);
@@ -294,7 +306,7 @@ aside.ngan.hien { transform: none; }
 }
 #banh.hien { opacity: 1; transform: translate(-50%, 0); }
 footer {
-  max-width: 1500px; margin: 0 auto; padding: 0 20px 48px;
+  max-width: 1560px; margin: 0 auto; padding: 0 20px 48px;
   color: var(--chu-mo); font-size: 13px;
 }
 
@@ -302,15 +314,11 @@ footer {
   .hang-1 { height: auto; padding-top: 10px; padding-bottom: 10px; flex-wrap: wrap; }
   nav.tab { order: 3; width: 100%; overflow-x: auto; margin-left: 0; }
   .hieu i { display: none; }
-  .cuon { max-height: none; }
-  .an-hep { display: none !important; }
   .o-tim kbd { display: none; }
-
-  /* Thanh công cụ phải xuống dòng: nhét năm thứ vào một hàng 375px thì ô tìm bị bóp còn
-     đúng cái kính lúp, mà tìm kiếm mới là thứ dùng nhiều nhất. */
+  /* Nhét năm thứ vào một hàng 375px thì ô tìm bị bóp còn mỗi cái kính lúp. */
   .hang-2 { height: auto; padding-top: 9px; padding-bottom: 9px; flex-wrap: wrap; }
   .o-tim { order: -1; flex: 1 0 100%; max-width: none; }
-  .dem { margin-left: auto; }
+  .dan, .dan.gon { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -319,12 +327,31 @@ footer {
 <header class="dinh">
   <div class="hang hang-1">
     <div class="hieu">
-      <span class="rong">🐉</span>
+      <svg class="cau" viewBox="0 0 32 32" aria-hidden="true">
+        <defs>
+          <path id="sao" d="M0-1 .225-.309H.951L.363.118.588.809 0 .382-.588.809-.363.118-.951-.309H-.225Z"/>
+          <radialGradient id="men" cx="34%" cy="28%">
+            <stop offset="0" stop-color="#ffdb92"/><stop offset="1" stop-color="#ea9412"/>
+          </radialGradient>
+        </defs>
+        <circle cx="16" cy="16" r="15" fill="url(#men)"/>
+        <g fill="#c0392b">
+          <use href="#sao" transform="translate(16 9.5) scale(3.4)"/>
+          <use href="#sao" transform="translate(9.5 17) scale(3.4)"/>
+          <use href="#sao" transform="translate(22.5 17) scale(3.4)"/>
+          <use href="#sao" transform="translate(16 24) scale(3.4)"/>
+        </g>
+      </svg>
       <b>DataNro</b>
       <i id="capnhat">đang tải…</i>
     </div>
     <nav class="tab" id="tab" role="tablist"></nav>
-    <button class="nut nut-tron" id="doi-mau" title="Đổi sáng / tối" aria-label="Đổi sáng tối">◐</button>
+    <button class="nut nut-tron" id="doi-mau" title="Đổi sáng / tối" aria-label="Đổi sáng tối">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="8"/>
+        <path d="M12 4a8 8 0 0 0 0 16Z" fill="currentColor" stroke="none"/>
+      </svg>
+    </button>
   </div>
 
   <div class="hang hang-2">
@@ -340,14 +367,19 @@ footer {
       <option value="id">Sắp theo id</option>
       <option value="ten">Sắp theo tên</option>
     </select>
-    <button class="nut" id="chep-tat" title="Chép id của mọi mục đang hiện">Chép id</button>
+    <button class="nut" id="chep-tat" title="Chép id của mọi mục đang hiện">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="9" width="12" height="12" rx="2"/>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+      </svg>
+      Chép id
+    </button>
     <span class="dem" id="dem"></span>
   </div>
 </header>
 
-<main>
-  <div class="khung"><div class="cuon" id="noi-dung"></div></div>
-</main>
+<main><div class="dan" id="noi-dung"></div></main>
 
 <footer>
   Dữ liệu lấy thẳng từ máy chủ game, cập nhật tự động mỗi ngày ·
@@ -424,17 +456,26 @@ const thoat = (s) => String(s ?? "").replace(/[&<>"']/g,
 const khongDau = (s) => String(s ?? "").normalize("NFD")
   .replace(/[̀-ͯ]/g, "").replace(/đ/gi, "d").toLowerCase();
 
-/** Ô ảnh; thiếu ảnh thì hiện dấu hỏi chứ đừng để khung trống trơn. */
-function veAnh(id, lop = "") {
-  if (id === null || id === undefined || id < 0) return `<span class="o-anh trong ${lop}"></span>`;
-  return `<span class="o-anh ${lop}"><img loading="lazy" decoding="async" alt=""
+/** Ô ảnh; thiếu ảnh thì hiện biểu tượng ảnh vỡ chứ đừng để khung trống trơn. */
+function veAnh(id) {
+  if (id === null || id === undefined || id < 0) return `<span class="o-anh trong"></span>`;
+  return `<span class="o-anh"><img loading="lazy" decoding="async" alt=""
     src="${T.nph}/Icons/${id}.png"
     onerror="this.parentNode.classList.add('trong')"></span>`;
 }
 
 /** Chip bấm là chép. Đây là thứ dùng nhiều nhất của trang này nên để nó thật rõ. */
 const chep = (giaTri, nhan) =>
-  `<span class="chep" data-chep="${thoat(giaTri)}" title="Bấm để chép">${thoat(nhan ?? giaTri)}</span>`;
+  `<span class="chep" data-chep="${thoat(giaTri)}" title="Bấm để chép">${nhan ?? thoat(giaTri)}</span>`;
+
+/**
+ * Chip chép có nhãn mờ phía trước, kiểu "id 26" - biết đang chép cái gì mà không dài dòng.
+ * Giá trị âm nghĩa là máy chủ không có (part NPC trống chẳng hạn) nên bỏ hẳn chip đi, chứ
+ * bày ra một cái "chân -1" bấm được thì chỉ tổ rối.
+ */
+const chepNhan = (nhan, giaTri) => Number(giaTri) < 0
+  ? ""
+  : chep(giaTri, `<em>${thoat(nhan)}</em>${thoat(giaTri)}`);
 
 const chipHanhTinh = (g) => {
   const h = HANH_TINH[g] ?? { ten: "?" + g, lop: "xam" };
@@ -485,61 +526,77 @@ async function layMuc(muc) {
   return dl;
 }
 
-// ══════════ vẽ từng mục ══════════
-
-const bang = (cot, hang) => `<table><thead><tr>${cot}</tr></thead><tbody>${hang}</tbody></table>`;
+// ══════════ thẻ ══════════
 
 const VE = {
-  vatpham: (ds) => bang(
-    `<th>Ảnh</th><th>Id</th><th>Tên</th><th class="an-hep">Loại</th><th class="an-hep">Cho</th>
-     <th class="an-hep">Sức mạnh</th><th class="an-hep">Cấp</th><th class="an-hep">Icon</th>`,
-    ds.map((x, i) => `<tr data-i="${i}">
-      <td class="hep">${veAnh(x.iconID)}</td>
-      <td class="hep">${chep(x.id)}</td>
-      <td>
-        <div class="ten-chinh">${thoat(x.name)}</div>
-        ${x.description ? `<div class="ten-phu">${thoat(x.description)}</div>` : ""}
-      </td>
-      <td class="an-hep"><span class="chip">${thoat(LOAI_VAT_PHAM[x.type] ?? "loại " + x.type)}</span></td>
-      <td class="an-hep">${chipHanhTinh(x.gender)}</td>
-      <td class="so an-hep">${x.strRequire > 0 ? gonSo(x.strRequire) : "—"}</td>
-      <td class="so an-hep">${x.level || "—"}</td>
-      <td class="hep an-hep">${chep(x.iconID)}</td>
-    </tr>`).join("")),
+  vatpham: (ds) => ds.map((x, i) => `<article class="the" data-i="${i}">
+    <div class="the-tren">
+      ${veAnh(x.iconID)}
+      <div class="the-chu">
+        <div class="the-ten">${thoat(x.name)}</div>
+        ${x.description ? `<div class="the-mo">${thoat(x.description)}</div>` : ""}
+        <div class="the-chip">
+          <span class="chip">${thoat(LOAI_VAT_PHAM[x.type] ?? "loại " + x.type)}</span>
+          ${chipHanhTinh(x.gender)}
+        </div>
+      </div>
+    </div>
+    <div class="the-duoi">
+      ${chepNhan("id ", x.id)}${chepNhan("ảnh ", x.iconID)}
+      <span class="the-so">${x.strRequire > 0 ? gonSo(x.strRequire) + " <em>SM</em>" : ""}${
+        x.level ? ` · ${x.level} <em>cấp</em>` : ""}</span>
+    </div>
+  </article>`).join(""),
 
-  quai: (ds) => bang(
-    `<th>Id</th><th>Tên</th><th>Máu</th><th class="an-hep">Loại</th>
-     <th class="an-hep">Tầm đi</th><th class="an-hep">Tốc độ</th><th class="an-hep">Phi tiêu</th>`,
-    ds.map((x, i) => `<tr data-i="${i}">
-      <td class="hep">${chep(x.mobTemplateId)}</td>
-      <td><div class="ten-chinh">${thoat(x.name)}</div></td>
-      <td class="so">${gonSo(x.hp)}</td>
-      <td class="so an-hep">${x.type}</td>
-      <td class="so an-hep">${x.rangeMove}</td>
-      <td class="so an-hep">${x.speed}</td>
-      <td class="so an-hep">${x.dartType}</td>
-    </tr>`).join("")),
+  quai: (ds) => ds.map((x, i) => `<article class="the" data-i="${i}">
+    <div class="the-tren">
+      <div class="the-chu">
+        <div class="the-ten">${thoat(x.name)}</div>
+        <div class="the-chip">
+          <span class="chip">${gonSo(x.hp)} máu</span>
+          <span class="chip xam">loại ${x.type}</span>
+          <span class="chip xam">tầm ${x.rangeMove}</span>
+          <span class="chip xam">tốc ${x.speed}</span>
+          <span class="chip xam">phi tiêu ${x.dartType}</span>
+        </div>
+      </div>
+    </div>
+    <div class="the-duoi">${chepNhan("id ", x.mobTemplateId)}</div>
+  </article>`).join(""),
 
-  npc: (ds) => bang(
-    `<th>Hình</th><th>Id</th><th>Tên</th><th class="an-hep">Menu</th>`,
-    ds.map((x, i) => `<tr data-i="${i}">
-      <td class="hep"><div class="bo-anh">${veAnh(x.headId)}${veAnh(x.bodyId)}${veAnh(x.legId)}</div></td>
-      <td class="hep">${chep(x.npcTemplateId)}</td>
-      <td><div class="ten-chinh">${thoat(x.name)}</div></td>
-      <td class="an-hep">${(x.menu || []).flat().map((m) => chep(m)).join(" ") || "—"}</td>
-    </tr>`).join("")),
+  npc: (ds) => ds.map((x, i) => `<article class="the" data-i="${i}">
+    <div class="the-tren">
+      <div class="the-chu">
+        <div class="the-ten">${thoat(x.name)}</div>
+        <div class="bo-anh">${veAnh(x.headId)}${veAnh(x.bodyId)}${veAnh(x.legId)}</div>
+        <div class="the-chip">${(x.menu || []).flat().map((m) => chep(m)).join("")}</div>
+      </div>
+    </div>
+    <div class="the-duoi">
+      ${chepNhan("id ", x.npcTemplateId)}${chepNhan("đầu ", x.headId)}
+      ${chepNhan("thân ", x.bodyId)}${chepNhan("chân ", x.legId)}
+    </div>
+  </article>`).join(""),
 
-  option: (ds) => `<div class="luoi">${ds.map((x, i) => `<div class="the-nho" data-i="${i}">
-      <span class="sid">${x.id}</span><span class="stn">${thoat(x.name)}</span>
-    </div>`).join("")}</div>`,
+  option: (ds) => ds.map((x, i) => `<article class="the" data-i="${i}">
+    <div class="the-tren">
+      <div class="the-chu"><div class="the-ten">${thoat(x.name)}</div></div>
+    </div>
+    <div class="the-duoi">
+      ${chepNhan("id ", x.id)}<span class="the-so"><em>loại</em> ${x.type}</span>
+    </div>
+  </article>`).join(""),
 
-  map: (ds) => `<div class="luoi">${ds.map((x, i) => `<div class="the-nho" data-i="${i}">
-      <span class="sid">${x.id}</span><span class="stn">${thoat(x.name)}</span>
-    </div>`).join("")}</div>`
+  map: (ds) => ds.map((x, i) => `<article class="the" data-i="${i}">
+    <div class="the-tren">
+      <div class="the-chu"><div class="the-ten">${thoat(x.name)}</div></div>
+    </div>
+    <div class="the-duoi">${chepNhan("id ", x.id)}</div>
+  </article>`).join("")
 };
 
 /**
- * Kĩ năng lồng ba tầng (lớp → chiêu → cấp) nên không nhét vừa một bảng phẳng:
+ * Kĩ năng lồng ba tầng (lớp → chiêu → cấp) nên không nhét vừa một thẻ:
  * mỗi chiêu là một khối mở ra được, bên trong mới là bảng các cấp.
  */
 function veChieu(ds) {
@@ -547,7 +604,7 @@ function veChieu(ds) {
     const chieu = (lop.skillTemplates || []).map((st) => {
       const cap = (st.skills || []).map((sk) => `<tr>
         <td class="so">${sk.point}</td>
-        <td class="hep">${chep(sk.skillId)}</td>
+        <td>${chep(sk.skillId)}</td>
         <td class="so">${gonSo(sk.powRequire)}</td>
         <td class="so">${sk.damage}</td>
         <td class="so">${gonSo(sk.manaUse)}</td>
@@ -560,14 +617,15 @@ function veChieu(ds) {
       return `<details class="chieu">
         <summary>
           ${veAnh(st.iconId)}
-          <span>
-            <div class="ten-chinh">${thoat(st.name)}</div>
-            <div class="ten-phu">${thoat(st.description)} · ${thoat(st.damInfo)}</div>
+          <span class="the-chu">
+            <div class="the-ten">${thoat(st.name)}</div>
+            <div class="the-mo">${thoat(st.description)} · ${thoat(st.damInfo)}</div>
           </span>
         </summary>
-        <div class="cap-bang">${bang(
-          `<th>Cấp</th><th>Id</th><th>Sức mạnh</th><th>Sát thương</th><th>Ki</th>
-           <th>Hồi</th><th>Tầm</th><th>Giá</th><th>Học ở</th>`, cap)}</div>
+        <div class="cap-hop"><table><thead><tr>
+          <th>Cấp</th><th>Id</th><th>Sức mạnh</th><th>Sát thương</th><th>Ki</th>
+          <th>Hồi</th><th>Tầm</th><th>Giá</th><th>Học ở</th>
+        </tr></thead><tbody>${cap}</tbody></table></div>
       </details>`;
     }).join("");
 
@@ -605,8 +663,7 @@ const CHI_TIET = {
     anh: x.headId, ten: x.name, phu: `NPC · id ${x.npcTemplateId}`,
     dong: dongTT("Id NPC", x.npcTemplateId) + dongTT("Id đầu", x.headId) +
       dongTT("Id thân", x.bodyId) + dongTT("Id chân", x.legId) +
-      (x.menu || []).map((m, i) =>
-        dongTT(`Menu ${i}`, (m || []).join(" · "))).join("")
+      (x.menu || []).map((m, i) => dongTT(`Menu ${i}`, (m || []).join(" · "))).join("")
   }),
   option: (x) => ({
     anh: -1, ten: x.name, phu: `Option vật phẩm · id ${x.id}`,
@@ -618,12 +675,9 @@ const CHI_TIET = {
   })
 };
 
-let dangXem = null;
-
 function moNgan(i) {
   const x = dangHien[i];
   if (!x) return;
-  dangXem = x;
 
   const ct = CHI_TIET[T.muc](x);
   $("ngan").innerHTML = `
@@ -646,7 +700,7 @@ function moNgan(i) {
   $("chep-json").onclick = () => chepChu(JSON.stringify(x, null, 2), "Đã chép JSON");
   $("dong-ngan").onclick = dongNgan;
 
-  document.querySelectorAll("[data-i]").forEach((e) =>
+  document.querySelectorAll("article[data-i]").forEach((e) =>
     e.setAttribute("aria-selected", String(Number(e.dataset.i) === i)));
 }
 
@@ -654,8 +708,7 @@ function dongNgan() {
   $("ngan").classList.remove("hien");
   $("ngan").setAttribute("aria-hidden", "true");
   $("man").classList.remove("hien");
-  dangXem = null;
-  document.querySelectorAll('[data-i][aria-selected="true"]')
+  document.querySelectorAll('article[data-i][aria-selected="true"]')
     .forEach((e) => e.removeAttribute("aria-selected"));
 }
 
@@ -700,6 +753,7 @@ async function ve() {
   const phien = ++phienVe;
   const noi = $("noi-dung");
   $("link-json").href = `${T.nph}/${T.sv}/${MUC[T.muc].tep}`;
+  noi.classList.toggle("gon", T.muc === "map" || T.muc === "option");
 
   let ds;
   try {
@@ -707,7 +761,7 @@ async function ve() {
   } catch (e) {
     if (phien !== phienVe) return;
     noi.innerHTML = `<p class="trong-rong loi">Không đọc được ${thoat(MUC[T.muc].tep)}: ${thoat(e.message)}
-      <br>Có thể workflow chưa chạy lần nào.</p>`;
+      <br>Có thể workflow chưa chạy xong lần nào.</p>`;
     $("dem").textContent = "";
     dangHien = [];
     return;
@@ -831,11 +885,10 @@ async function khoiDong() {
   // Chép cả loạt id đang hiện: dựng danh sách id cho tool thì cần đúng cái này.
   $("chep-tat").addEventListener("click", () => {
     if (!dangHien.length) return banh("Không có gì để chép");
-    const ids = dangHien.map(idCua).join(",");
-    chepChu(ids, `Đã chép ${dangHien.length} id`);
+    chepChu(dangHien.map(idCua).join(","), `Đã chép ${dangHien.length} id`);
   });
 
-  // Chip chép bắt ở tầng document: chúng có mặt cả trong bảng lẫn trong ngăn chi tiết, gắn
+  // Chip chép bắt ở tầng document: chúng có mặt cả trong thẻ lẫn trong ngăn chi tiết, gắn
   // riêng từng chỗ là kiểu gì cũng quên một chỗ.
   document.addEventListener("click", (e) => {
     const c = e.target.closest("[data-chep]");
@@ -846,11 +899,11 @@ async function khoiDong() {
     setTimeout(() => c.classList.remove("xong"), 900);
   });
 
-  // Bấm vào hàng (chỗ nào không phải chip) thì mở ngăn chi tiết.
+  // Bấm vào thẻ (chỗ nào không phải chip) thì mở ngăn chi tiết.
   $("noi-dung").addEventListener("click", (e) => {
     if (e.target.closest("[data-chep]")) return;
-    const hang = e.target.closest("[data-i]");
-    if (hang && T.muc !== "chieu") moNgan(Number(hang.dataset.i));
+    const the = e.target.closest("article[data-i]");
+    if (the) moNgan(Number(the.dataset.i));
   });
 
   $("man").addEventListener("click", dongNgan);

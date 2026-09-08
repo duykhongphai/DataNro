@@ -192,4 +192,9 @@ jobs:
             exit 0
           fi
           git commit -m "data: cập nhật tự động $(date -u +%Y-%m-%d)"
+
+          # Lượt chạy mất mười lăm hai mươi phút, thừa thời gian để có người đẩy commit khác
+          # lên trong lúc đó (sửa trang chẳng hạn). Không kéo về trước thì push bị từ chối và
+          # cả lượt đổ dữ liệu đổ sông đổ bể ở đúng bước cuối.
+          git pull --rebase origin main
           git push
