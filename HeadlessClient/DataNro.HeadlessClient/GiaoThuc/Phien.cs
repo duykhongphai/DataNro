@@ -43,6 +43,10 @@ public sealed class Phien : IDisposable
         Doc.MatKhau = matKhau;
         Doc.DatLai();
 
+        // Xếp hàng trước khi nối: máy chủ tính nhịp đăng nhập theo địa chỉ, mà mấy thợ chạy
+        // song song thì nghỉ xong là ùa vào cùng lúc.
+        await CongDangNhap.ChoLuotAsync(Log, ct).ConfigureAwait(false);
+
         if (!await noi.NoiAsync(host, port, ct)) return false;
         BatNhip();
 
@@ -139,7 +143,12 @@ public sealed class Phien : IDisposable
     public void Ngat()
     {
         try { nhipCts?.Cancel(); } catch (Exception) { }
+
+        // Chỉ tính là một lần đăng xuất khi đang thật sự nối - gọi Ngat() trên phiên đã đóng
+        // (Dispose gọi lại chẳng hạn) mà cũng đẩy mốc thì mọi thợ đợi oan thêm một vòng.
+        var dangNoi = noi.DaNoi;
         noi.Dong();
+        if (dangNoi) CongDangNhap.GhiNgat();
     }
 
     public void Dispose()

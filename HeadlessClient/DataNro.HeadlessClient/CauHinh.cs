@@ -143,6 +143,12 @@ public class CauHinh
     /// <summary>Thử đăng nhập tối đa mấy lần trước khi chịu thua.</summary>
     public int SoLanDangNhap { get; set; } = 4;
 
+    /// <summary>
+    /// Hai lần đăng nhập <b>bất kì</b> phải cách nhau ít nhất ngần này, tính chung cho mọi
+    /// phiên. Máy chủ bắt chờ theo địa chỉ chứ không theo tài khoản. 0 là tắt.
+    /// </summary>
+    public int CachDangNhapMs { get; set; } = 30000;
+
     /// <summary>Hết giờ cho cả việc tải ảnh, tính riêng với <see cref="ChoDuLieuMs"/>.</summary>
     public int ChoAnhMs { get; set; } = 2400000;
 
@@ -185,6 +191,7 @@ public class CauHinh
         Moi("NRO_KHONG_ANH", _ => c.TaiAnh = false);
         Moi("NRO_ID_ANH_TOI_DA", v => { if (int.TryParse(v, out var m)) c.IdAnhToiDa = m; });
         Moi("NRO_SONG_SONG", v => { if (int.TryParse(v, out var ss)) c.SoPhienSongSong = ss; });
+        Moi("NRO_CACH_DANG_NHAP", v => { if (int.TryParse(v, out var cdn2)) c.CachDangNhapMs = cdn2; });
 
         // Danh sách tài khoản phụ: mỗi dòng "tài khoản|mật khẩu". Xuống dòng trong một secret
         // của GitHub Actions vẫn giữ nguyên nên nhét cả danh sách vào một secret là được.
@@ -237,6 +244,7 @@ public class CauHinh
                 case "--nghi-luot": if (int.TryParse(KeTiep(), out var ng)) c.NghiGiuaLuotMs = ng; break;
                 case "--id-anh-toi-da": if (int.TryParse(KeTiep(), out var im)) c.IdAnhToiDa = im; break;
                 case "--song-song": if (int.TryParse(KeTiep(), out var ss2)) c.SoPhienSongSong = ss2; break;
+                case "--cach-dang-nhap": if (int.TryParse(KeTiep(), out var cd)) c.CachDangNhapMs = cd; break;
             }
         }
 

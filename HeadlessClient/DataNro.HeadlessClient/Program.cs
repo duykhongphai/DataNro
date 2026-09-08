@@ -20,6 +20,7 @@ public static class Program
         Console.OutputEncoding = System.Text.Encoding.UTF8;
 
         var c = CauHinh.Doc(args);
+        GiaoThuc.CongDangNhap.CachMs = c.CachDangNhapMs;
         var loi = c.LoiCauHinh();
         if (loi != null)
         {
