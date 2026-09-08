@@ -84,6 +84,8 @@ jobs:
         env:
           BO_QUA_ANH: ${{ github.event.inputs.bo-qua-anh }}
           NRO_TAIKHOAN: ${{ secrets.NRO_TAIKHOAN }}
+          # Tài khoản phụ, mỗi dòng "tài khoản|mật khẩu". Không có thì chỉ chạy một phiên.
+          NRO_TK_DS: ${{ secrets.NRO_TK_DS }}
         run: |
           set -u
           if [ -z "${NRO_TAIKHOAN:-}" ]; then
@@ -98,6 +100,13 @@ jobs:
           # Ghi thẳng vào thư mục làm việc: repo này vừa là mã nguồn vừa là nơi chứa dữ liệu,
           # nên ảnh của lần trước đã có sẵn và chỉ phải hỏi ảnh mới.
           export NRO_RA=.
+          export NRO_TK_DS
+
+          # Quét mù id ảnh: máy chủ không có gói nào liệt kê kho ảnh nên muốn lấy sạch thì chỉ
+          # còn cách hỏi hết. Không làm trong một hôm - mỗi lượt chạy nhặt thêm được chừng nào
+          # hay chừng ấy, ảnh đã có và id đã biết là không có đều được nhớ lại nên hôm sau đi
+          # tiếp từ chỗ dở chứ không hỏi lại từ đầu.
+          export NRO_ID_ANH_TOI_DA=20000
 
           # Chạy thẳng tệp thực thi chứ không qua "dotnet run": timeout gửi tín hiệu cho tiến
           # trình nó gọi, mà dotnet run là tiến trình BỌC - giết nó thì tiến trình con vẫn có

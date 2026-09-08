@@ -126,120 +126,174 @@ public static class Program
     /// ra chuyện bỏ sót: vòng lặp chỉ dừng khi hỏi lại mà vẫn không ra thêm cái nào.
     /// </para>
     /// </summary>
-    private static async Task TaiAnhAsync(Phien phien, CauHinh c)
+    private static async Task TaiAnhAsync(Phien phienDau, CauHinh c)
     {
         var thuMucAnh = Path.Combine(c.Ra, c.NhaPhatHanh, "Icons");
 
         var daDon = BoAnh.DonVaoThuMucCon(thuMucAnh);
         if (daDon > 0) Console.WriteLine($"  dọn {daDon} ảnh cũ vào thư mục con");
 
-        var tatCa = BoAnh.GomId(phien.Data);
+        var tatCa = c.IdAnhToiDa > 0
+            ? Enumerable.Range(0, c.IdAnhToiDa + 1).ToList()
+            : BoAnh.GomId(phienDau.Data);
+
         var daCo = BoAnh.DaCoTrenDia(thuMucAnh);
+        var khongCo = BoAnh.DocKhongCo(thuMucAnh);
 
-        // Hàng chờ xoay vòng: id nào máy chủ không trả lời thì xuống CUỐI hàng chứ không nằm
-        // lại đầu. Máy chủ im lặng với cả id không có ảnh lẫn id bị cắt vì quá hạn mức, mà
-        // đám không có ảnh thì im mãi mãi - để chúng ở đầu là mỗi lượt lại hỏi đúng chúng,
-        // dồn dần cho tới khi chiếm hết cả lô và không id mới nào được hỏi nữa.
-        var hang = new Queue<(int id, int soLanHoi)>(
-            tatCa.Where(id => !daCo.Contains(id)).Select(id => (id, 0)));
+        var canHoi = tatCa.Where(id => !daCo.Contains(id) && !khongCo.Contains(id)).ToList();
+        var hang = new HangAnh(canHoi);
 
-        Console.WriteLine($"Tải ảnh: {tatCa.Count} id, đã có sẵn {daCo.Count}, cần hỏi {hang.Count}");
-        if (hang.Count == 0) return;
+        Console.WriteLine($"Tải ảnh: {tatCa.Count} id" +
+                          (c.IdAnhToiDa > 0 ? " (quét mù 0.." + c.IdAnhToiDa + ")" : "") +
+                          $", đã có sẵn {daCo.Count}, biết là không có {khongCo.Count}, " +
+                          $"cần hỏi {canHoi.Count}");
+        if (canHoi.Count == 0) return;
+
+        var tho = c.DsTaiKhoan.Take(Math.Max(1, c.SoPhienSongSong)).ToList();
+        Console.WriteLine($"  chạy {tho.Count} phiên song song: " +
+                          string.Join(", ", tho.Select(x => x.tk)));
 
         using var hetAnh = new CancellationTokenSource(c.ChoAnhMs);
-        var bo = new BoAnh(phien, thuMucAnh);
-        var tongNhan = 0;
-        var tongRong = 0;
-        var boCuoc = 0;
+        var moiPhat = new ThongKeAnh();
 
-        for (var luot = 1; luot <= c.SoLuotAnh && hang.Count > 0; luot++)
-        {
-            if (hetAnh.IsCancellationRequested)
-            {
-                Console.WriteLine("  ảnh: hết giờ cho phép, dừng.");
-                break;
-            }
+        // Thợ đầu dùng luôn phiên đang mở - nó vừa lấy xong bảng dữ liệu nên còn nguyên hạn
+        // mức chưa đụng tới. Mấy thợ sau mở phiên riêng.
+        var viec = tho.Select((tk, i) => MotThoAnhAsync(
+            i, tk, i == 0 ? phienDau : null, hang, moiPhat, c, thuMucAnh, hetAnh.Token)).ToList();
+        await Task.WhenAll(viec).ConfigureAwait(false);
 
-            if (!phien.DaNoi && !await phien.DangNhapCoThuLaiAsync(c.Host, c.Port, c.TaiKhoan,
-                    c.MatKhau, c.ChoDangNhapMs, c.SoLanDangNhap, c.NghiGiuaLuotMs, hetAnh.Token))
-            {
-                Console.WriteLine("  ảnh: nối lại không được, dừng.");
-                break;
-            }
-
-            // Lô vừa đúng hạn mức máy chủ. Ném cả nghìn id vào một lượt thì nó chỉ trả lời
-            // hơn trăm cái đầu rồi im, phần sau hỏi ra gió mà vẫn tốn 40ms mỗi cái.
-            var lo = new List<(int id, int soLanHoi)>();
-            while (lo.Count < c.SoAnhMoiLuot && hang.Count > 0) lo.Add(hang.Dequeue());
-
-            var kq = await bo.MotLuotAsync(lo.Select(x => x.id).ToList(),
-                c.NhipAnhMs, c.LangAnhMs, hetAnh.Token);
-            tongNhan += kq.SoNhan;
-            tongRong += kq.SoRong;
-
-            // Id máy chủ trả lời thì xong hẳn. Phần im lặng quay lại cuối hàng; chỉ id nào
-            // hỏi lúc máy chủ CÒN ĐANG trả lời mới bị tính một lần thử hỏng - id hỏi sau khi
-            // nó đã im thì coi như chưa thử, không thì cả khúc đuôi lô bị loại oan.
-            var daThu = new HashSet<int>(kq.ChuaRoDaThu);
-            var chuaThu = new HashSet<int>(kq.ChuaRoChuaThu);
-            var boLuotNay = 0;
-
-            foreach (var (id, soLanHoi) in lo)
-            {
-                if (chuaThu.Contains(id))
-                {
-                    hang.Enqueue((id, soLanHoi));
-                }
-                else if (daThu.Contains(id))
-                {
-                    if (soLanHoi + 1 >= c.SoLanHoiLaiAnh)
-                    {
-                        boLuotNay++;
-                        boCuoc++;
-                    }
-                    else
-                    {
-                        hang.Enqueue((id, soLanHoi + 1));
-                    }
-                }
-            }
-
-            var traLoi = lo.Count - daThu.Count - chuaThu.Count;
-            Console.WriteLine($"  lượt {luot}: hỏi {lo.Count}, trả lời {traLoi} " +
-                              $"(ảnh {kq.SoNhan}, rỗng {kq.SoRong}, hỏng {kq.SoLoi}), " +
-                              $"hỏi lại {daThu.Count - boLuotNay + chuaThu.Count} " +
-                              $"(trong đó {chuaThu.Count} chưa kịp thử), bỏ {boLuotNay}, " +
-                              $"còn trong hàng {hang.Count}" +
-                              (kq.BiNgatGiuaChung ? " - máy chủ ngừng trả lời" : ""));
-
-            if (hang.Count == 0) break;
-
-            // Ngắt hẳn rồi nghỉ một nhịp: bộ đếm của máy chủ tính theo phiên, giữ nguyên kết
-            // nối mà hỏi tiếp thì vẫn im như cũ.
-            phien.Ngat();
-            try
-            {
-                await Task.Delay(c.NghiGiuaLuotMs, hetAnh.Token).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-                break;
-            }
-        }
+        BoAnh.GhiKhongCo(thuMucAnh, moiPhat.KhongCo);
 
         // Đếm theo danh sách CẦN chứ không theo số tệp ngoài đĩa: đĩa còn giữ cả ảnh của
         // những lần chạy trước không còn ai tham chiếu, lấy hiệu hai số ra âm ngay.
         var coTrenDia = BoAnh.DaCoTrenDia(thuMucAnh);
         var thieu = tatCa.Count(id => !coTrenDia.Contains(id));
         Console.WriteLine($"  ảnh: {tatCa.Count - thieu}/{tatCa.Count} id có ảnh " +
-                          $"(lần chạy này thêm {tongNhan}, trên đĩa tổng cộng {coTrenDia.Count} tệp). " +
-                          $"Thiếu {thieu}: {boCuoc} id hỏi {c.SoLanHoiLaiAnh} lần không thấy trả lời, " +
-                          $"{hang.Count} id còn trong hàng → {Path.GetFullPath(thuMucAnh)}");
+                          $"(lần chạy này thêm {moiPhat.Nhan}, trên đĩa tổng cộng {coTrenDia.Count} tệp). " +
+                          $"Thiếu {thieu}: {moiPhat.KhongCo.Count} id hỏi {c.SoLanHoiLaiAnh} lần không thấy " +
+                          $"trả lời, {hang.Con} id còn trong hàng → {Path.GetFullPath(thuMucAnh)}");
 
-        // Còn id trong hàng nghĩa là vòng lặp dừng vì hết giờ / hết lượt / mất kết nối chứ
-        // không phải vì đã hỏi xong. Nói rõ ra để lần chạy sau biết mà xin nốt.
-        if (hang.Count > 0)
+        if (hang.Con > 0)
             Console.WriteLine("  ảnh: CHƯA hỏi hết - chạy lại lần nữa sẽ xin tiếp phần còn thiếu.");
+    }
+
+    /// <summary>Số liệu gộp của mọi thợ. Mọi thao tác đều phải khoá vì nhiều luồng cùng ghi.</summary>
+    private sealed class ThongKeAnh
+    {
+        private readonly object khoa = new();
+        public int Nhan, Rong;
+
+        /// <summary>Id đã hỏi đủ số lần mà máy chủ vẫn im - coi như kho không có.</summary>
+        public readonly HashSet<int> KhongCo = new();
+
+        public void Them(int nhan, int rong)
+        {
+            lock (khoa)
+            {
+                Nhan += nhan;
+                Rong += rong;
+            }
+        }
+
+        public void ThemKhongCo(int id)
+        {
+            lock (khoa) KhongCo.Add(id);
+        }
+    }
+
+    /// <summary>
+    /// Một thợ: đăng nhập bằng tài khoản của mình, rút lô từ hàng chung, hỏi, ngắt, nghỉ, lặp.
+    ///
+    /// <para>
+    /// Ngắt hẳn rồi mới nghỉ chứ không giữ kết nối: bộ đếm của máy chủ tính theo <b>phiên</b>,
+    /// giữ nguyên kết nối mà hỏi tiếp thì nó vẫn im như cũ.
+    /// </para>
+    /// </summary>
+    private static async Task MotThoAnhAsync(int soTho, (string tk, string mk) tk, Phien coSan,
+        HangAnh hang, ThongKeAnh thongKe, CauHinh c, string thuMucAnh, CancellationToken ct)
+    {
+        var ten = $"#{soTho + 1} {tk.tk}";
+        var phien = coSan ?? new Phien(d => Console.WriteLine($"  [{ten}] {d}"));
+        var bo = new BoAnh(phien, thuMucAnh);
+
+        try
+        {
+            for (var luot = 1; luot <= c.SoLuotAnh; luot++)
+            {
+                if (ct.IsCancellationRequested || hang.Con == 0) break;
+
+                if (!phien.DaNoi && !await phien.DangNhapCoThuLaiAsync(c.Host, c.Port, tk.tk,
+                        tk.mk, c.ChoDangNhapMs, c.SoLanDangNhap, c.NghiGiuaLuotMs, ct))
+                {
+                    Console.WriteLine($"  [{ten}] nối lại không được, dừng.");
+                    break;
+                }
+
+                // Lô vừa đúng hạn mức máy chủ. Ném cả nghìn id vào một lượt thì nó chỉ trả lời
+                // hơn trăm cái đầu rồi im, phần sau hỏi ra gió mà vẫn tốn 40ms mỗi cái.
+                var lo = hang.Lay(c.SoAnhMoiLuot);
+                if (lo.Count == 0) break;
+
+                var kq = await bo.MotLuotAsync(lo.Select(x => x.id).ToList(),
+                    c.NhipAnhMs, c.LangAnhMs, ct);
+                thongKe.Them(kq.SoNhan, kq.SoRong);
+
+                // Id máy chủ trả lời thì xong hẳn. Phần im lặng quay lại cuối hàng; chỉ id nào
+                // hỏi lúc máy chủ CÒN ĐANG trả lời mới bị tính một lần thử hỏng - id hỏi sau
+                // khi nó đã im thì coi như chưa thử, không thì cả khúc đuôi lô bị loại oan.
+                var daThu = new HashSet<int>(kq.ChuaRoDaThu);
+                var chuaThu = new HashSet<int>(kq.ChuaRoChuaThu);
+                var boLuotNay = 0;
+
+                foreach (var (id, soLanHoi) in lo)
+                {
+                    if (chuaThu.Contains(id))
+                    {
+                        hang.Tra(id, soLanHoi);
+                    }
+                    else if (daThu.Contains(id))
+                    {
+                        if (soLanHoi + 1 >= c.SoLanHoiLaiAnh)
+                        {
+                            boLuotNay++;
+                            thongKe.ThemKhongCo(id);
+                        }
+                        else
+                        {
+                            hang.Tra(id, soLanHoi + 1);
+                        }
+                    }
+                }
+
+                var traLoi = lo.Count - daThu.Count - chuaThu.Count;
+                Console.WriteLine($"  [{ten}] lượt {luot}: hỏi {lo.Count}, trả lời {traLoi} " +
+                                  $"(ảnh {kq.SoNhan}, rỗng {kq.SoRong}, hỏng {kq.SoLoi}), " +
+                                  $"hỏi lại {daThu.Count - boLuotNay + chuaThu.Count}, " +
+                                  $"bỏ {boLuotNay}, còn trong hàng {hang.Con}" +
+                                  (kq.BiNgatGiuaChung ? " - máy chủ ngừng trả lời" : ""));
+
+                if (hang.Con == 0) break;
+
+                phien.Ngat();
+                try
+                {
+                    await Task.Delay(c.NghiGiuaLuotMs, ct).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"  [{ten}] hỏng: {e.Message}");
+        }
+        finally
+        {
+            // Phiên của thợ đầu là của hàm gọi, để nó tự dọn.
+            if (coSan == null) phien.Dispose();
+        }
     }
 
     /// <summary>

@@ -33,6 +33,18 @@ public class CauHinh
     /// <summary>Chuỗi proxy dạng <c>socks5://user:pass@host:port</c>; bỏ trống là đi thẳng.</summary>
     public string Proxy { get; set; }
 
+    /// <summary>
+    /// Danh sách tài khoản phụ để chạy song song, mỗi dòng <c>tài khoản|mật khẩu</c>.
+    ///
+    /// <para>
+    /// Hạn mức ảnh của máy chủ tính theo <b>phiên</b>: mỗi phiên trả lời chừng trăm gói rồi im
+    /// tới hết phiên. Một tài khoản thì chỉ còn cách ngắt ra đăng nhập lại, mà mỗi vòng như vậy
+    /// mất cả phút. Nhiều tài khoản cùng rút chung một hàng chờ thì thời gian chia đều cho số
+    /// tài khoản.
+    /// </para>
+    /// </summary>
+    public List<(string tk, string mk)> DsTaiKhoan { get; } = new();
+
     /// <summary>Thư mục gốc để ghi dữ liệu ra; tệp nằm ở <c>&lt;Ra&gt;/&lt;NhàPhátHành&gt;/&lt;TênThưMục&gt;/</c>.</summary>
     public string Ra { get; set; } = "out";
 
@@ -72,6 +84,17 @@ public class CauHinh
 
     /// <summary>Tải luôn ảnh icon sau khi có bảng dữ liệu.</summary>
     public bool TaiAnh { get; set; } = true;
+
+    /// <summary>
+    /// Quét mù id ảnh từ 0 tới số này thay vì chỉ hỏi những id có bảng dữ liệu trỏ tới. 0 là
+    /// tắt. Máy chủ không có gói nào liệt kê kho ảnh, nên muốn lấy sạch thì chỉ còn cách hỏi
+    /// hết - id nào không có thì nó im lặng, ghi lại vào <c>Icons/KhongCo.json</c> để lần sau
+    /// khỏi hỏi lại.
+    /// </summary>
+    public int IdAnhToiDa { get; set; }
+
+    /// <summary>Số phiên chạy song song, mỗi phiên một tài khoản. Nhiều hơn số tài khoản thì bị cắt xuống.</summary>
+    public int SoPhienSongSong { get; set; } = 4;
 
     /// <summary>
     /// Cách nhau bao lâu giữa hai lần hỏi ảnh. Giao diện các tool đang để 70ms; ở đây nhanh
@@ -147,6 +170,23 @@ public class CauHinh
         Moi("NRO_PROXY", v => c.Proxy = v);
         Moi("NRO_RA", v => c.Ra = v);
         Moi("NRO_KHONG_ANH", _ => c.TaiAnh = false);
+        Moi("NRO_ID_ANH_TOI_DA", v => { if (int.TryParse(v, out var m)) c.IdAnhToiDa = m; });
+        Moi("NRO_SONG_SONG", v => { if (int.TryParse(v, out var ss)) c.SoPhienSongSong = ss; });
+
+        // Danh sách tài khoản phụ: mỗi dòng "tài khoản|mật khẩu". Xuống dòng trong một secret
+        // của GitHub Actions vẫn giữ nguyên nên nhét cả danh sách vào một secret là được.
+        var ds = Environment.GetEnvironmentVariable("NRO_TK_DS");
+        if (!string.IsNullOrWhiteSpace(ds))
+            foreach (var dong in ds.Split('\n'))
+            {
+                var t = dong.Trim();
+                if (t.Length == 0) continue;
+                var f = t.Split('|');
+                if (f.Length < 2) continue;
+                var tk = f[0].Trim();
+                var mk = f[1].Trim();
+                if (tk.Length > 0 && mk.Length > 0) c.DsTaiKhoan.Add((tk, mk));
+            }
 
         // 3. dòng lệnh
         for (var i = 0; i < args.Length; i++)
@@ -180,10 +220,19 @@ public class CauHinh
                 case "--cho-dang-nhap": if (int.TryParse(KeTiep(), out var cdn)) c.ChoDangNhapMs = cdn; break;
                 case "--lan-dang-nhap": if (int.TryParse(KeTiep(), out var ldn)) c.SoLanDangNhap = ldn; break;
                 case "--nghi-luot": if (int.TryParse(KeTiep(), out var ng)) c.NghiGiuaLuotMs = ng; break;
+                case "--id-anh-toi-da": if (int.TryParse(KeTiep(), out var im)) c.IdAnhToiDa = im; break;
+                case "--song-song": if (int.TryParse(KeTiep(), out var ss2)) c.SoPhienSongSong = ss2; break;
             }
         }
 
         if (c.Port <= 0) c.Port = 14445;
+
+        // Tài khoản chính luôn là thợ đầu tiên; danh sách phụ chỉ bổ sung, và bỏ trùng để
+        // không có hai phiên cùng đăng nhập một tài khoản (máy chủ đá phiên cũ ra).
+        if (!string.IsNullOrWhiteSpace(c.TaiKhoan) && !string.IsNullOrWhiteSpace(c.MatKhau))
+            c.DsTaiKhoan.RemoveAll(x => string.Equals(x.tk, c.TaiKhoan, StringComparison.OrdinalIgnoreCase));
+        c.DsTaiKhoan.Insert(0, (c.TaiKhoan, c.MatKhau));
+
         return c;
 
         static void Moi(string ten, Action<string> dat)

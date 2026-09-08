@@ -199,6 +199,43 @@ public sealed class BoAnh
     }
 
     /// <summary>
+    /// Danh sách id máy chủ đã xác nhận là không có ảnh, để lượt sau khỏi hỏi lại.
+    ///
+    /// <para>
+    /// Quét mù cả chục nghìn id thì phần lớn là id trống; không nhớ lại thì lượt sau vẫn phải
+    /// hỏi hết từ đầu, mà mỗi lượt chỉ hỏi được chừng trăm cái.
+    /// </para>
+    /// </summary>
+    public static HashSet<int> DocKhongCo(string thuMucRa)
+    {
+        var duong = Path.Combine(thuMucRa, "KhongCo.json");
+        if (!File.Exists(duong)) return new HashSet<int>();
+
+        try
+        {
+            return JsonSerializer.Deserialize<HashSet<int>>(File.ReadAllText(duong))
+                   ?? new HashSet<int>();
+        }
+        catch (Exception)
+        {
+            return new HashSet<int>();
+        }
+    }
+
+    /// <summary>Gộp thêm id mới vào danh sách "không có" rồi ghi lại.</summary>
+    public static void GhiKhongCo(string thuMucRa, IEnumerable<int> them)
+    {
+        var gop = DocKhongCo(thuMucRa);
+        var truoc = gop.Count;
+        foreach (var id in them) gop.Add(id);
+        if (gop.Count == truoc && truoc > 0) return;
+
+        Directory.CreateDirectory(thuMucRa);
+        File.WriteAllText(Path.Combine(thuMucRa, "KhongCo.json"),
+            JsonSerializer.Serialize(gop.OrderBy(x => x)) + "\n");
+    }
+
+    /// <summary>
     /// Ghi bảng kích thước của mọi ảnh đang có ngoài đĩa: <c>{"3":[80,28], ...}</c>.
     ///
     /// <para>
