@@ -297,6 +297,11 @@ details.chieu > summary::after {
   -webkit-mask: var(--ic-mui) center/contain no-repeat; mask: var(--ic-mui) center/contain no-repeat;
 }
 details.chieu[open] > summary::after { transform: rotate(90deg); }
+/* Tên chiêu kèm chip id: để chip xuống hàng được khi tên dài, chứ ép một hàng thì tên bị
+   cắt cụt trên màn hẹp. */
+details.chieu > summary .the-ten {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
 details.chieu > summary .o-anh { width: 60px; height: 60px; border-radius: 10px; }
 details.chieu > summary .o-anh img { max-width: 54px; max-height: 54px; }
 .cap-hop {
@@ -801,7 +806,7 @@ function veChieu(ds) {
         <summary>
           ${veAnh(st.iconId)}
           <span class="the-chu">
-            <div class="the-ten">${thoat(st.name)}</div>
+            <div class="the-ten">${thoat(st.name)}${chepNhan("id ", st.id)}</div>
             <div class="the-mo">${thoat(st.description)} · ${thoat(st.damInfo)}</div>
           </span>
         </summary>
@@ -1126,6 +1131,9 @@ async function khoiDong() {
   document.addEventListener("click", (e) => {
     const c = e.target.closest("[data-chep]");
     if (!c) return;
+    // Chặn cả hành vi mặc định chứ không chỉ nổi bọt: chip id nằm trong <summary> của chiêu,
+    // mà mở/đóng <details> là default action nên stopPropagation không cản được.
+    e.preventDefault();
     e.stopPropagation();
     chepChu(c.dataset.chep);
     c.classList.add("xong");
