@@ -202,6 +202,12 @@ jobs:
           print(json.dumps(nph, ensure_ascii=False))
           PY
 
+      - name: Cập nhật ngày trong sitemap
+        # Dữ liệu đổi mỗi ngày mà sitemap vẫn khai ngày cũ thì Google không có cớ ghé lại.
+        run: |
+          sed -i "s|<lastmod>.*</lastmod>|<lastmod>$(date -u +%Y-%m-%d)</lastmod>|" sitemap.xml
+          cat sitemap.xml
+
       - name: Commit và đẩy
         run: |
           git config user.name "github-actions[bot]"
