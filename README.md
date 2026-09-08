@@ -167,6 +167,35 @@ hai ba trăm id nữa, cả đám bị gạch oan. Một lượt chạy ra 597/1
 Ảnh xin ở **mức phóng 4** (trường thứ hai của gói `CLIENT_INFO`, tức `mGraphics.zoomLevel` bên
 client) nên nét gấp bốn lần cỡ trong game: icon id 3 ra `80×28` thay vì `20×7`.
 
+## Clone mà không kéo dữ liệu về máy
+
+Thư mục `TeaMobi/` nặng hơn 20 MB (2035 tệp) mà sửa mã nguồn thì chẳng cần tới. Bảo git giữ
+nó trong repo nhưng đừng bung ra đĩa:
+
+```bash
+git sparse-checkout set --no-cone '/*' '!/TeaMobi'
+```
+
+Cây làm việc còn dưới 1 MB, `git status` vẫn sạch, `git pull` / `git push` vẫn bình thường.
+Muốn lấy lại thì `git sparse-checkout disable`.
+
+Trên Windows nhớ chạy lệnh này bằng **PowerShell**, đừng dùng Git Bash: nó tưởng `/TeaMobi` là
+đường dẫn tuyệt đối rồi đổi thành `C:/Program Files/Git/TeaMobi`, mẫu thành vô nghĩa mà không
+báo lỗi gì.
+
+Hai điều cần nhớ khi đang bật sparse-checkout:
+
+- **Đừng chạy client với `--ra .`** — nó ghi vào `TeaMobi/`, mà git đang đánh dấu bỏ qua những
+  đường dẫn đó nên `git status` không thấy và `git add` không nhặt. Chạy tay thì dùng `--ra out`.
+- Mở `index.html` ở máy sẽ không có dữ liệu để đọc; xem trang thật ở link Pages.
+
+Lệnh trên chỉ gọn **cây làm việc**; thư mục `.git` vẫn giữ đủ lịch sử (~64 MB). Muốn gọn cả cái
+đó thì clone lại theo kiểu tải blob khi cần:
+
+```bash
+git clone --filter=blob:none --sparse https://github.com/duykhongphai/DataNro.git
+```
+
 ## Cập nhật tự động
 
 [`.github/workflows/update-data.yml`](.github/workflows/update-data.yml) chạy 5h sáng giờ Việt
