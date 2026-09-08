@@ -51,13 +51,34 @@ public sealed class BoDocGoi : IBoDoc
     /// <summary>Máy chủ báo đăng nhập thành công (gói messageNotMap nhánh 4).</summary>
     public bool DaDangNhap { get; private set; }
 
-    /// <summary>Máy chủ từ chối, kèm lời nhắn - không việc gì phải chờ tiếp.</summary>
+    /// <summary>Máy chủ chưa cho vào, kèm lời nhắn - lần thử này coi như hỏng.</summary>
     public string LoiDangNhap { get; private set; }
+
+    /// <summary>
+    /// Đã báo máy chủ "client sẵn sàng" - tức là phiên này thật sự dùng được (xin ảnh được).
+    /// Đây mới là mốc để bên ngoài biết đăng nhập xong, chứ không phải <see cref="GameData.DaDayDu"/>:
+    /// bảng dữ liệu còn nguyên từ lần nối trước nên nó luôn đúng, kể cả khi phiên mới chưa vào.
+    /// </summary>
+    public bool DaSanSang { get; private set; }
 
     /// <summary>Gói ảnh (-67) đi thẳng ra ngoài cho bộ tải ảnh, ở đây không đụng vào.</summary>
     public event Action<Message> NhanAnh;
 
     // ==================== sự kiện kết nối ====================
+
+    /// <summary>
+    /// Dọn trạng thái của lần nối trước. <b>Bắt buộc</b> gọi trước mỗi lần nối mới: mấy cái
+    /// cờ dưới đây đều tính theo một kết nối, để nguyên thì lần nối sau không gửi lại tài
+    /// khoản, không báo sẵn sàng, mà bên ngoài lại tưởng đã vào xong.
+    /// </summary>
+    public void DatLai()
+    {
+        DaDangNhap = false;
+        DaSanSang = false;
+        LoiDangNhap = null;
+        daGuiLai = false;
+        daBaoSanSang = false;
+    }
 
     public void KhiNoiXong()
     {
@@ -190,6 +211,14 @@ public sealed class BoDocGoi : IBoDoc
         log?.Invoke($"Đăng nhập xong, phiên bản dữ liệu data={Data.vsData} map={Data.vsMap} " +
                     $"skill={Data.vsSkill} item={Data.vsItem}");
 
+        // Nối lại để xin tiếp ảnh thì bảng mẫu đã có sẵn từ lần trước - xin lại chỉ tổ kéo
+        // thêm vài trăm KB mỗi lượt mà chẳng để làm gì.
+        if (Data.DaDayDu)
+        {
+            BaoSanSang();
+            return;
+        }
+
         Gui(NotMap(6)); // xin bảng map + npc + quái
         Gui(NotMap(7)); // xin bảng kĩ năng
         Gui(NotMap(8)); // xin bảng vật phẩm
@@ -205,10 +234,17 @@ public sealed class BoDocGoi : IBoDoc
     private void KiemTraDuData()
     {
         if (daBaoSanSang || !Data.AllLoaded) return;
+        BaoSanSang();
+    }
+
+    private void BaoSanSang()
+    {
+        if (daBaoSanSang) return;
         daBaoSanSang = true;
         Gui(NotMap(13));
         Gui(NotMap(13));
         Gui(new Message((sbyte)-38));
+        DaSanSang = true;
     }
 
     // ==================== gói gửi đi ====================

@@ -48,9 +48,13 @@ public static class Program
         using var phien = new Phien(m => Console.WriteLine("  " + m));
         if (!DatProxy(phien, c)) return 2;
 
-        using var het = new CancellationTokenSource(c.ChoDuLieuMs);
-        var duLieu = await phien.DangNhapAsync(c.Host, c.Port, c.TaiKhoan, c.MatKhau,
-            c.ChoDuLieuMs, het.Token);
+        // Hạn tổng phải bao được hết các lần thử lại, không thì nó cắt ngang giữa chừng và
+        // ta mất một lần thử vô cớ.
+        var hanTong = Math.Max(c.ChoDuLieuMs,
+            c.SoLanDangNhap * c.ChoDangNhapMs + c.NghiGiuaLuotMs * c.SoLanDangNhap * c.SoLanDangNhap + 30000);
+        using var het = new CancellationTokenSource(hanTong);
+        var duLieu = await phien.DangNhapCoThuLaiAsync(c.Host, c.Port, c.TaiKhoan, c.MatKhau,
+            c.ChoDangNhapMs, c.SoLanDangNhap, c.NghiGiuaLuotMs, het.Token);
 
         if (!duLieu)
         {
@@ -95,9 +99,10 @@ public static class Program
     /// </para>
     ///
     /// <para>
-    /// Máy chủ chỉ trả khoảng hai trăm ảnh mỗi phiên rồi im, nên phải chia thành nhiều lượt:
-    /// hỏi tới khi nó ngừng trả lời, đăng nhập lại, hỏi tiếp phần chưa rõ. Ảnh đã nằm ngoài
-    /// đĩa thì bỏ qua, nên chạy lại lần sau là nối tiếp chứ không làm lại từ đầu.
+    /// Máy chủ chỉ trả khoảng một trăm ảnh mỗi phiên rồi im, nên phải chia nhiều lượt, mỗi
+    /// lượt một lô nhỏ rồi ngắt ra đăng nhập lại. <b>Chỉ id nào máy chủ đã trả lời mới bị gạch
+    /// khỏi danh sách</b>; phần im lặng quay lại hàng chờ nguyên vẹn. Nhờ vậy không thể xảy
+    /// ra chuyện bỏ sót: vòng lặp chỉ dừng khi hỏi lại mà vẫn không ra thêm cái nào.
     /// </para>
     /// </summary>
     private static async Task TaiAnhAsync(Phien phien, CauHinh c)
@@ -105,17 +110,24 @@ public static class Program
         var thuMucAnh = Path.Combine(c.Ra, c.NhaPhatHanh, "Icons");
         var tatCa = BoAnh.GomId(phien.Data);
         var daCo = BoAnh.DaCoTrenDia(thuMucAnh);
-        var conLai = tatCa.Where(id => !daCo.Contains(id)).ToList();
 
-        Console.WriteLine($"Tải ảnh: {tatCa.Count} id, đã có sẵn {daCo.Count}, cần hỏi {conLai.Count}");
-        if (conLai.Count == 0) return;
+        // Hàng chờ xoay vòng: id nào máy chủ không trả lời thì xuống CUỐI hàng chứ không nằm
+        // lại đầu. Máy chủ im lặng với cả id không có ảnh lẫn id bị cắt vì quá hạn mức, mà
+        // đám không có ảnh thì im mãi mãi - để chúng ở đầu là mỗi lượt lại hỏi đúng chúng,
+        // dồn dần cho tới khi chiếm hết cả lô và không id mới nào được hỏi nữa.
+        var hang = new Queue<(int id, int soLanHoi)>(
+            tatCa.Where(id => !daCo.Contains(id)).Select(id => (id, 0)));
+
+        Console.WriteLine($"Tải ảnh: {tatCa.Count} id, đã có sẵn {daCo.Count}, cần hỏi {hang.Count}");
+        if (hang.Count == 0) return;
 
         using var hetAnh = new CancellationTokenSource(c.ChoAnhMs);
         var bo = new BoAnh(phien, thuMucAnh);
         var tongNhan = 0;
         var tongRong = 0;
+        var boCuoc = 0;
 
-        for (var luot = 1; luot <= c.SoLuotAnh && conLai.Count > 0; luot++)
+        for (var luot = 1; luot <= c.SoLuotAnh && hang.Count > 0; luot++)
         {
             if (hetAnh.IsCancellationRequested)
             {
@@ -123,25 +135,48 @@ public static class Program
                 break;
             }
 
-            if (!phien.DaNoi && !await NoiLaiAsync(phien, c, hetAnh.Token))
+            if (!phien.DaNoi && !await phien.DangNhapCoThuLaiAsync(c.Host, c.Port, c.TaiKhoan,
+                    c.MatKhau, c.ChoDangNhapMs, c.SoLanDangNhap, c.NghiGiuaLuotMs, hetAnh.Token))
             {
                 Console.WriteLine("  ảnh: nối lại không được, dừng.");
                 break;
             }
 
-            var kq = await bo.MotLuotAsync(conLai, c.NhipAnhMs, c.LangAnhMs, hetAnh.Token);
+            // Lô vừa đúng hạn mức máy chủ. Ném cả nghìn id vào một lượt thì nó chỉ trả lời
+            // hơn trăm cái đầu rồi im, phần sau hỏi ra gió mà vẫn tốn 40ms mỗi cái.
+            var lo = new List<(int id, int soLanHoi)>();
+            while (lo.Count < c.SoAnhMoiLuot && hang.Count > 0) lo.Add(hang.Dequeue());
+
+            var kq = await bo.MotLuotAsync(lo.Select(x => x.id).ToList(),
+                c.NhipAnhMs, c.LangAnhMs, hetAnh.Token);
             tongNhan += kq.SoNhan;
             tongRong += kq.SoRong;
 
-            Console.WriteLine($"  lượt {luot}: nhận {kq.SoNhan}, rỗng {kq.SoRong}, hỏng {kq.SoLoi}, " +
-                              $"còn chưa rõ {kq.ChuaRo.Count}" +
-                              (kq.BiNgatGiuaChung ? " (máy chủ ngừng trả lời)" : ""));
+            // Id nào máy chủ trả lời thì xong hẳn. Id im lặng quay lại cuối hàng, cộng một
+            // lần hỏi; hỏi đủ số lần mà vẫn im thì mới kết luận là nó không có ảnh.
+            var chuaRo = new HashSet<int>(kq.ChuaRo);
+            var boLuotNay = 0;
+            foreach (var (id, soLanHoi) in lo)
+            {
+                if (!chuaRo.Contains(id)) continue;
+                if (soLanHoi + 1 >= c.SoLanHoiLaiAnh)
+                {
+                    boLuotNay++;
+                    boCuoc++;
+                }
+                else
+                {
+                    hang.Enqueue((id, soLanHoi + 1));
+                }
+            }
 
-            // Lượt không xin thêm được ảnh nào thì lượt sau cũng vậy - đừng đăng nhập lại vô ích.
-            if (kq.SoNhan == 0 && kq.SoRong == 0) break;
+            Console.WriteLine($"  lượt {luot}: hỏi {lo.Count}, trả lời {lo.Count - chuaRo.Count} " +
+                              $"(ảnh {kq.SoNhan}, rỗng {kq.SoRong}, hỏng {kq.SoLoi}), " +
+                              $"hỏi lại sau {chuaRo.Count - boLuotNay}, bỏ {boLuotNay}, " +
+                              $"còn trong hàng {hang.Count}" +
+                              (kq.BiNgatGiuaChung ? " - máy chủ ngừng trả lời" : ""));
 
-            conLai = kq.ChuaRo;
-            if (conLai.Count == 0) break;
+            if (hang.Count == 0) break;
 
             // Ngắt hẳn rồi nghỉ một nhịp: bộ đếm của máy chủ tính theo phiên, giữ nguyên kết
             // nối mà hỏi tiếp thì vẫn im như cũ.
@@ -157,36 +192,15 @@ public static class Program
         }
 
         var coTrenDia = BoAnh.DaCoTrenDia(thuMucAnh).Count;
-        Console.WriteLine($"  ảnh: tổng cộng {coTrenDia}/{tatCa.Count} tệp " +
-                          $"(lần chạy này thêm {tongNhan}, máy chủ báo không có ảnh {tongRong}) " +
-                          $"→ {Path.GetFullPath(thuMucAnh)}");
-    }
+        var thieu = tatCa.Count - coTrenDia;
+        Console.WriteLine($"  ảnh: {coTrenDia}/{tatCa.Count} tệp (lần chạy này thêm {tongNhan}). " +
+                          $"Thiếu {thieu}: {boCuoc} id hỏi {c.SoLanHoiLaiAnh} lần không thấy trả lời, " +
+                          $"{hang.Count} id còn trong hàng → {Path.GetFullPath(thuMucAnh)}");
 
-    /// <summary>
-    /// Đăng nhập lại để xin tiếp ảnh. Thử vài lần với quãng nghỉ dài dần: đăng nhập dồn dập
-    /// thì máy chủ đẩy vào hàng chờ hoặc chặn thẳng.
-    /// </summary>
-    private static async Task<bool> NoiLaiAsync(Phien phien, CauHinh c, CancellationToken ct)
-    {
-        for (var lan = 1; lan <= 3 && !ct.IsCancellationRequested; lan++)
-        {
-            Console.WriteLine($"  ảnh: đăng nhập lại (lần {lan})...");
-            if (await phien.DangNhapAsync(c.Host, c.Port, c.TaiKhoan, c.MatKhau,
-                    c.ChoDuLieuMs, ct))
-                return true;
-
-            phien.Ngat();
-            try
-            {
-                await Task.Delay(c.NghiGiuaLuotMs * lan, ct).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-                return false;
-            }
-        }
-
-        return phien.DaNoi;
+        // Còn id trong hàng nghĩa là vòng lặp dừng vì hết giờ / hết lượt / mất kết nối chứ
+        // không phải vì đã hỏi xong. Nói rõ ra để lần chạy sau biết mà xin nốt.
+        if (hang.Count > 0)
+            Console.WriteLine("  ảnh: CHƯA hỏi hết - chạy lại lần nữa sẽ xin tiếp phần còn thiếu.");
     }
 
     private static async Task<ServerInfo> TimMayChuAsync(string ten)

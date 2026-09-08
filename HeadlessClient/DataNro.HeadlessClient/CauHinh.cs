@@ -40,7 +40,8 @@ public class CauHinh
     public bool GhiMapJsonGoc { get; set; } = true;
 
     /// <summary>Hết giờ chờ đủ bảng dữ liệu.</summary>
-    public int ChoDuLieuMs { get; set; } = 180000;
+    /// Tính cả các lần thử lại, nên rộng hơn <see cref="ChoDangNhapMs"/> nhiều lần.
+    public int ChoDuLieuMs { get; set; } = 300000;
 
     /// <summary>Tải luôn ảnh icon sau khi có bảng dữ liệu.</summary>
     public bool TaiAnh { get; set; } = true;
@@ -54,11 +55,30 @@ public class CauHinh
     /// <summary>Máy chủ im lặng bao lâu thì coi như hết ảnh để trả.</summary>
     public int LangAnhMs { get; set; } = 8000;
 
+    /// <summary>
+    /// Mỗi lượt hỏi tối đa bao nhiêu id. Đo thực tế máy chủ trả khoảng một trăm gói mỗi phiên
+    /// rồi im, nên lô lớn hơn ngần này chỉ tổ hỏi ra gió mà vẫn tốn 40ms mỗi cái.
+    /// </summary>
+    public int SoAnhMoiLuot { get; set; } = 150;
+
+    /// <summary>
+    /// Hỏi một id mấy lần (ở mấy phiên khác nhau) mà vẫn không thấy trả lời thì mới kết luận
+    /// là máy chủ không có ảnh đó. Im lặng có hai nghĩa - "không có ảnh" và "đã hết hạn mức
+    /// phiên" - nên phải hỏi lại vài lần mới phân biệt được.
+    /// </summary>
+    public int SoLanHoiLaiAnh { get; set; } = 3;
+
+    /// <summary>Hạn cho MỘT lần thử đăng nhập. Ngắn thôi: lag thì cắt ra vào lại nhanh hơn chờ.</summary>
+    public int ChoDangNhapMs { get; set; } = 45000;
+
+    /// <summary>Thử đăng nhập tối đa mấy lần trước khi chịu thua.</summary>
+    public int SoLanDangNhap { get; set; } = 4;
+
     /// <summary>Hết giờ cho cả việc tải ảnh, tính riêng với <see cref="ChoDuLieuMs"/>.</summary>
-    public int ChoAnhMs { get; set; } = 1800000;
+    public int ChoAnhMs { get; set; } = 2400000;
 
     /// <summary>Tối đa bao nhiêu lượt đăng nhập lại để xin nốt ảnh.</summary>
-    public int SoLuotAnh { get; set; } = 40;
+    public int SoLuotAnh { get; set; } = 60;
 
     /// <summary>
     /// Nghỉ bao lâu giữa hai lượt. Đo thực tế: nghỉ 5 giây thì tới lần đăng nhập thứ ba là
@@ -117,6 +137,10 @@ public class CauHinh
                 case "--lang-anh": if (int.TryParse(KeTiep(), out var la)) c.LangAnhMs = la; break;
                 case "--cho-anh": if (int.TryParse(KeTiep(), out var ca)) c.ChoAnhMs = ca; break;
                 case "--luot-anh": if (int.TryParse(KeTiep(), out var lu)) c.SoLuotAnh = lu; break;
+                case "--lo-anh": if (int.TryParse(KeTiep(), out var lo)) c.SoAnhMoiLuot = lo; break;
+                case "--hoi-lai-anh": if (int.TryParse(KeTiep(), out var hl)) c.SoLanHoiLaiAnh = hl; break;
+                case "--cho-dang-nhap": if (int.TryParse(KeTiep(), out var cdn)) c.ChoDangNhapMs = cdn; break;
+                case "--lan-dang-nhap": if (int.TryParse(KeTiep(), out var ldn)) c.SoLanDangNhap = ldn; break;
                 case "--nghi-luot": if (int.TryParse(KeTiep(), out var ng)) c.NghiGiuaLuotMs = ng; break;
             }
         }

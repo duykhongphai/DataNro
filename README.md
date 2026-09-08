@@ -89,7 +89,7 @@ máy chủ gửi — cũng là chỗ duy nhất còn tên của mấy lớp th�
 ## Lưu ý
 
 - **Không phải id ảnh nào cũng có ảnh.** Khoảng 96% id lấy được; số còn lại máy chủ thật sự
-  không có, hỏi lại bao nhiêu lần cũng không ra.
+  không có — hỏi lại ba lần ở ba phiên khác nhau vẫn không thấy trả lời.
 - Ảnh quái và ảnh nền map **không có** — chúng không lấy được qua đường này.
 - Ba tệp `LinkMapsXmap.txt`, `GroupMapsXmap.txt`, `AutoLinkMapsWaypoint.txt` là đồ thị liên kết
   map, **chép tay** từ mod Dragonboy, không do máy chủ gửi nên không tự cập nhật.
@@ -125,23 +125,43 @@ dotnet run --project HeadlessClient/DataNro.HeadlessClient -- \
 | `--khong-anh` | | Chỉ lấy JSON, bỏ qua ảnh |
 | `--nhip-anh` | | Cách nhau bao lâu giữa hai lần hỏi ảnh (ms) |
 | `--luot-anh` | | Tối đa bao nhiêu lượt đăng nhập lại để xin nốt ảnh |
+| `--lo-anh` | | Mỗi lượt hỏi tối đa bao nhiêu id, mặc định 150 |
+| `--hoi-lai-anh` | | Hỏi một id mấy lần không thấy trả lời thì bỏ, mặc định 3 |
+| `--cho-dang-nhap` | | Hạn cho MỘT lần thử đăng nhập, mặc định 45000 ms |
+| `--lan-dang-nhap` | | Thử đăng nhập mấy lần trước khi chịu thua, mặc định 4 |
 
 Mã thoát: `0` xong, `1` không lấy đủ dữ liệu, `2` cấu hình sai, `3` không thấy máy chủ.
 
-### Ảnh: máy chủ chỉ cho khoảng hai trăm mỗi phiên
+### Ảnh: máy chủ chỉ cho khoảng một trăm mỗi phiên
 
 Không có gói nào xin được cả kho ảnh — chỉ có gói hỏi từng id một, và máy chủ **im lặng** với
 id nó không có.
 
-Đo thực tế: máy chủ trả lời ngoan khoảng hai trăm gói đầu rồi **im hẳn** cho tới hết phiên, dù
-kết nối vẫn sống. Là hạn theo *số lần hỏi mỗi phiên* chứ không phải theo nhịp, nên hạ nhịp
-không cứu được — phải ngắt ra rồi đăng nhập lại, mỗi lượt được khoảng một trăm ảnh.
+Đo thực tế: máy chủ trả lời khoảng **một trăm** gói mỗi phiên rồi **im hẳn** cho tới hết phiên,
+dù kết nối vẫn sống. Là hạn theo *số lần hỏi mỗi phiên* chứ không phải theo nhịp, nên hạ nhịp
+không cứu được — phải ngắt ra rồi đăng nhập lại.
 
-Chỗ tinh tế là phân biệt "không có ảnh" với "máy chủ đã ngừng trả lời", vì cả hai đều là im
-lặng: id nào hỏi **trước** lần trả lời cuối cùng thì coi như đã có kết luận, id hỏi sau đó mới
-phải hỏi lại ở lượt sau.
+Chỗ tinh tế là phân biệt "không có ảnh" với "máy chủ đã ngừng trả lời", vì **cả hai đều là im
+lặng**. Không suy đoán được, nên luật ở đây là:
+
+1. Chỉ id nào máy chủ **thật sự trả lời** mới rời hàng chờ — gói trả lời có mang id nên biết
+   chính xác cái nào.
+2. Id im lặng xuống **cuối** hàng chờ kèm bộ đếm. Xuống cuối chứ không nằm lại đầu: id không có
+   ảnh thì im mãi mãi, để chúng ở đầu là mỗi lượt lại hỏi đúng chúng, dồn dần cho tới khi chiếm
+   hết cả lô và không id mới nào được hỏi nữa.
+3. Hỏi đủ **ba lần ở ba phiên khác nhau** mà vẫn im thì mới kết luận là không có ảnh.
+
+Vòng lặp chỉ dừng khi hàng chờ rỗng. Dừng vì hết giờ hay mất kết nối thì nó nói thẳng
+*"CHƯA hỏi hết"* để lần chạy sau xin tiếp.
+
+Từng suy đoán theo mốc thời gian — *"id nào hỏi trước lần trả lời cuối cùng thì coi như xong"* —
+và sai nặng: ta hỏi mỗi 40ms còn trả lời thì về trễ, nên tới lúc gói cuối rơi xuống đã hỏi thêm
+hai ba trăm id nữa, cả đám bị gạch oan. Một lượt chạy ra 597/1895 ảnh rồi tưởng là xong.
 
 Ảnh part của NPC hoá ra nằm **chung bảng** với icon vật phẩm, nên hỏi part là ra luôn hình NPC.
+
+Ảnh xin ở **mức phóng 4** (trường thứ hai của gói `CLIENT_INFO`, tức `mGraphics.zoomLevel` bên
+client) nên nét gấp bốn lần cỡ trong game: icon id 3 ra `80×28` thay vì `20×7`.
 
 ## Cập nhật tự động
 

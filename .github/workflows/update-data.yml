@@ -62,7 +62,7 @@ jobs:
   capnhat:
     name: Đổ dữ liệu
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
     steps:
       - name: Lấy mã nguồn
         uses: actions/checkout@v4
@@ -73,7 +73,7 @@ jobs:
           dotnet-version: "10.0.x"
 
       - name: Dựng headless client
-        run: dotnet build HeadlessClient/DataNro.HeadlessClient/DataNro.HeadlessClient.csproj -c Release --nologo
+        run: dotnet publish HeadlessClient/DataNro.HeadlessClient/DataNro.HeadlessClient.csproj -c Release --nologo -o may
 
       - name: Đổ dữ liệu từng máy chủ
         env:
@@ -93,7 +93,11 @@ jobs:
           # Ghi thẳng vào thư mục làm việc: repo này vừa là mã nguồn vừa là nơi chứa dữ liệu,
           # nên ảnh của lần trước đã có sẵn và chỉ phải hỏi ảnh mới.
           export NRO_RA=.
-          duan=HeadlessClient/DataNro.HeadlessClient/DataNro.HeadlessClient.csproj
+
+          # Chạy thẳng tệp thực thi chứ không qua "dotnet run": timeout gửi tín hiệu cho tiến
+          # trình nó gọi, mà dotnet run là tiến trình BỌC - giết nó thì tiến trình con vẫn có
+          # thể sống nhăn, đúng cái ta đang muốn tránh.
+          may="$PWD/may/DataNro.HeadlessClient"
 
           con_anh=1
           xong=0
@@ -109,15 +113,20 @@ jobs:
               co_anh="--khong-anh"
             fi
 
+            # timeout là hàng rào cứng cuối cùng: client đã tự có hạn giờ cho từng bước, nhưng
+            # một máy chủ treo kiểu lạ thì không được phép ngốn hết cả lượt của mười bảy máy
+            # còn lại. Máy đi tải ảnh cần rộng tay hơn hẳn.
+            if [ -z "$co_anh" ]; then han=2700; else han=420; fi
+
             echo "::group::$NRO_MAYCHU"
-            if dotnet run --project "$duan" -c Release --no-build -- $co_anh; then
+            if timeout -k 15 "$han" "$may" $co_anh; then
               xong=$((xong + 1))
               # Chỉ tắt lượt ảnh khi nó thật sự chạy xong - máy chủ đầu mà chết thì máy kế
               # tiếp phải gánh việc tải ảnh, không thì cả hôm đó không có ảnh mới nào.
               if [ -z "$co_anh" ]; then con_anh=0; fi
             else
               # Một máy chủ chết (bảo trì, đổi tên) không được kéo cả lượt xuống theo.
-              echo "::warning::$NRO_MAYCHU hỏng, bỏ qua"
+              echo "::warning::$NRO_MAYCHU hỏng hoặc quá $han giây, bỏ qua"
               if [ -n "$hong" ]; then hong="$hong, $NRO_MAYCHU"; else hong="$NRO_MAYCHU"; fi
             fi
             echo "::endgroup::"
@@ -125,6 +134,12 @@ jobs:
 
           echo "Xong $xong máy chủ.${hong:+ Hỏng: $hong}"
           [ "$xong" -gt 0 ] || { echo "::error::Không máy chủ nào đổ được dữ liệu"; exit 1; }
+
+      - name: Dọn tệp dựng
+        # Thư mục này nằm ngay trong repo nên phải xoá trước khi commit, không thì cả bộ nhị
+        # phân đi theo dữ liệu lên GitHub.
+        if: always()
+        run: rm -rf may
 
       - name: Kiểm tra kết quả
         run: |

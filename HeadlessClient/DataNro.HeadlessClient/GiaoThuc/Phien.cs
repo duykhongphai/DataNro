@@ -41,6 +41,7 @@ public sealed class Phien : IDisposable
     {
         Doc.TaiKhoan = taiKhoan;
         Doc.MatKhau = matKhau;
+        Doc.DatLai();
 
         if (!await noi.NoiAsync(host, port, ct)) return false;
         BatNhip();
@@ -48,7 +49,10 @@ public sealed class Phien : IDisposable
         var han = Environment.TickCount64 + hetGioMs;
         while (Environment.TickCount64 < han && !ct.IsCancellationRequested)
         {
-            if (Data.DaDayDu) return true;
+            // Mốc là DaSanSang của PHIÊN NÀY, không phải Data.DaDayDu: bảng dữ liệu còn
+            // nguyên từ lần nối trước nên DaDayDu luôn đúng, dùng nó thì lần nối lại nào
+            // cũng trả về "xong" ngay tức khắc dù máy chủ chưa hề nhận.
+            if (Doc.DaSanSang && Data.DaDayDu) return true;
 
             if (!noi.DaNoi)
             {
@@ -58,7 +62,11 @@ public sealed class Phien : IDisposable
 
             if (Doc.LoiDangNhap != null)
             {
-                Log("Máy chủ từ chối: " + Doc.LoiDangNhap);
+                // Không phân biệt "sai mật khẩu" với "vui lòng chờ một lát nữa" bằng cách dò
+                // chữ - mỗi máy chủ một kiểu. Cứ coi là lần thử này hỏng rồi để bên ngoài thử
+                // lại: hàng chờ thì lần sau vào được, sai mật khẩu thì hỏng nốt mấy lần rồi
+                // dừng, mất chừng một phút chứ không sai kết quả.
+                Log("Máy chủ chưa cho vào: " + Doc.LoiDangNhap);
                 return false;
             }
 
@@ -72,7 +80,37 @@ public sealed class Phien : IDisposable
             }
         }
 
-        return Data.DaDayDu;
+        if (!Doc.DaSanSang) Log("Hết giờ chờ máy chủ nhận đăng nhập.");
+        return Doc.DaSanSang && Data.DaDayDu;
+    }
+
+    /// <summary>
+    /// Đăng nhập, hỏng thì ngắt hẳn rồi thử lại. Mỗi lần thử có hạn giờ riêng và <b>ngắn</b>:
+    /// máy chủ lag hoặc đẩy ta vào hàng chờ thì ngồi đợi ba phút cũng vô ích, cắt ra vào lại
+    /// nhanh hơn nhiều. Chờ giữa các lần dài dần để khỏi bị coi là đăng nhập dồn dập.
+    /// </summary>
+    public async Task<bool> DangNhapCoThuLaiAsync(string host, int port, string taiKhoan,
+        string matKhau, int hetGioMoiLanMs, int soLan, int nghiMs, CancellationToken ct)
+    {
+        for (var lan = 1; lan <= soLan && !ct.IsCancellationRequested; lan++)
+        {
+            if (lan > 1) Log($"Đăng nhập lại (lần {lan}/{soLan})...");
+            if (await DangNhapAsync(host, port, taiKhoan, matKhau, hetGioMoiLanMs, ct)) return true;
+
+            Ngat();
+            if (lan == soLan) break;
+
+            try
+            {
+                await Task.Delay(nghiMs * lan, ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
+        }
+
+        return false;
     }
 
     public void Ngat()

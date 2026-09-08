@@ -18,9 +18,9 @@ public class KetQuaLuot
     public int SoLoi;
 
     /// <summary>
-    /// Id đã hỏi nhưng <b>chưa biết kết quả</b>: hỏi sau thời điểm máy chủ trả lời lần cuối,
-    /// nên không phân biệt được "không có ảnh" với "máy chủ đã ngừng trả lời". Phải hỏi lại
-    /// ở lượt sau.
+    /// Id đã hỏi mà máy chủ <b>không hề trả lời</b> - phải hỏi lại ở lượt sau. Im lặng không
+    /// phân biệt được "không có ảnh" với "đã ngừng trả lời", nên tuyệt đối không suy đoán;
+    /// chỉ khi nào một lượt hỏi lại mà vẫn không ra gì thì mới kết luận là không có ảnh.
     /// </summary>
     public List<int> ChuaRo = new();
 
@@ -54,19 +54,28 @@ public sealed class BoAnh
     private readonly Phien phien;
     private readonly string thuMuc;
     private readonly object khoa = new();
+
+    /// <summary>Id đã ghi được ảnh trong lượt này.</summary>
     private readonly HashSet<int> daNhan = new();
+
+    /// <summary>
+    /// Id máy chủ đã <b>trả lời</b>, kể cả trả lời "không có ảnh".
+    ///
+    /// <para>
+    /// Đây mới là căn cứ để nói một id đã xong. Trước đây suy theo mốc thời gian - "id nào
+    /// hỏi trước lần trả lời cuối cùng thì coi như đã có kết luận" - và nó SAI nặng: ta hỏi
+    /// mỗi 40ms còn trả lời thì về trễ, nên tới lúc gói cuối rơi xuống ta đã hỏi thêm hai ba
+    /// trăm id nữa. Cả đám đó bị đánh dấu xong dù máy chủ chưa hề trả lời. Đo trên Vũ trụ 1:
+    /// sáu lượt ra 597 ảnh rồi dừng, trong khi 1298 id bị vứt oan.
+    /// </para>
+    /// </summary>
+    private readonly HashSet<int> daTraLoi = new();
 
     private int soRong;
     private int soLoi;
 
     /// <summary>Mốc lần cuối nhận được gói ảnh, để đo khoảng lặng.</summary>
     private long nhipCuoi;
-
-    /// <summary>Đã hỏi tới id thứ mấy tại lần nhận gói gần nhất.</summary>
-    private int thuTuLucNhan;
-
-    /// <summary>Số id đã hỏi trong lượt này; hàm bắt gói đọc để ghi <see cref="thuTuLucNhan"/>.</summary>
-    private int daHoi;
 
     public BoAnh(Phien phien, string thuMucRa)
     {
@@ -127,11 +136,14 @@ public sealed class BoAnh
     {
         Directory.CreateDirectory(thuMuc);
 
-        lock (khoa) daNhan.Clear();
+        lock (khoa)
+        {
+            daNhan.Clear();
+            daTraLoi.Clear();
+        }
+
         soRong = 0;
         soLoi = 0;
-        daHoi = 0;
-        thuTuLucNhan = 0;
 
         // Đồng hồ phải chạy trước khi gắn tay bắt gói: hàm Nhan dùng nó ngay khi gói đầu về.
         var dongHo = Stopwatch.StartNew();
@@ -152,11 +164,10 @@ public sealed class BoAnh
                 }
 
                 phien.Doc.XinAnh(ids[i]);
-                Interlocked.Exchange(ref daHoi, i + 1);
 
                 // Máy chủ đã ngừng trả lời hẳn thì hỏi tiếp chỉ tốn thời gian. Chỉ tính từ
-                // lúc đã nhận được ít nhất một ảnh, không thì lượt đầu chưa kịp về đã bỏ.
-                if (SoDaNhan > 0 && dongHo.ElapsedMilliseconds - Interlocked.Read(ref nhipCuoi) > langMs)
+                // lúc đã nhận được ít nhất một trả lời, không thì lượt đầu chưa kịp về đã bỏ.
+                if (SoDaTraLoi > 0 && dongHo.ElapsedMilliseconds - Interlocked.Read(ref nhipCuoi) > langMs)
                 {
                     kq.BiNgatGiuaChung = true;
                     break;
@@ -192,10 +203,11 @@ public sealed class BoAnh
             phien.Doc.NhanAnh -= Nhan;
         }
 
-        // Id hỏi TRƯỚC lần trả lời cuối cùng thì coi như đã có kết luận: hoặc ảnh đã về, hoặc
-        // máy chủ thật sự không có ảnh đó. Id hỏi sau đó thì không biết được, phải hỏi lại.
-        var moc = Volatile.Read(ref thuTuLucNhan);
-        for (var i = moc; i < ids.Count; i++) kq.ChuaRo.Add(ids[i]);
+        // Chỉ id nào máy chủ ĐÃ TRẢ LỜI mới coi là xong. Phần còn lại hỏi lại ở lượt sau,
+        // không suy đoán gì cả.
+        lock (khoa)
+            foreach (var id in ids)
+                if (!daTraLoi.Contains(id)) kq.ChuaRo.Add(id);
 
         kq.SoNhan = SoDaNhan;
         kq.SoRong = soRong;
@@ -205,7 +217,6 @@ public sealed class BoAnh
         void Nhan(Message msg)
         {
             Interlocked.Exchange(ref nhipCuoi, dongHo.ElapsedMilliseconds);
-            Volatile.Write(ref thuTuLucNhan, Volatile.Read(ref daHoi));
 
             try
             {
@@ -214,6 +225,7 @@ public sealed class BoAnh
 
                 var id = r.readInt();
                 var n = r.readInt();
+                lock (khoa) daTraLoi.Add(id);
 
                 // Độ dài 0/1 là cách máy chủ nói "có id này nhưng ảnh rỗng".
                 if (n <= 1)
@@ -249,6 +261,14 @@ public sealed class BoAnh
         get
         {
             lock (khoa) return daNhan.Count;
+        }
+    }
+
+    private int SoDaTraLoi
+    {
+        get
+        {
+            lock (khoa) return daTraLoi.Count;
         }
     }
 
