@@ -15,8 +15,13 @@ name: Cập nhật dữ liệu
 
 on:
   schedule:
-    # 5h sáng giờ Việt Nam
-    - cron: "0 22 * * *"
+    # 6h sáng giờ Việt Nam. Cron của GitHub luôn tính theo UTC, mà Việt Nam là UTC+7 và không
+    # có giờ mùa hè, nên 6h sáng hôm nay = 23h UTC hôm qua.
+    #
+    # Cố ý lệch 5 phút chứ không đúng đầu giờ: GitHub nói thẳng trong tài liệu rằng đầu mỗi
+    # giờ là lúc hàng chờ Actions đông nhất và lịch dễ bị đẩy trễ. Lệch vài phút thì thực tế
+    # lại chạy gần 6h hơn là để đúng 23:00.
+    - cron: "5 23 * * *"
   workflow_dispatch:
     inputs:
       bo-qua-anh:
