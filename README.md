@@ -11,11 +11,15 @@ Dữ liệu là tệp tĩnh, đọc bằng `raw.githubusercontent.com` hoặc b�
 
 ```
 https://raw.githubusercontent.com/duykhongphai/DataNro/main/TeaMobi/Server1/ItemTemplates.json
-https://raw.githubusercontent.com/duykhongphai/DataNro/main/TeaMobi/Icons/410.png
+https://raw.githubusercontent.com/duykhongphai/DataNro/main/TeaMobi/Icons/0/410.png
 ```
 
-Bố cục: `Nhà phát hành / Máy chủ / Loại dữ liệu`. Ảnh nằm ở `Nhà phát hành / Icons / <id>.png`
-— dùng chung cho mọi máy chủ cùng nhà phát hành.
+Bố cục: `Nhà phát hành / Máy chủ / Loại dữ liệu`. Ảnh nằm ở
+`Nhà phát hành / Icons / <id chia 1000> / <id>.png` — dùng chung cho mọi máy chủ cùng nhà phát
+hành. Ví dụ id 410 ở `TeaMobi/Icons/0/410.png`, id 17529 ở `TeaMobi/Icons/17/17529.png`.
+
+Chia thư mục con vì GitHub cắt danh sách thư mục ở 1000 tệp — tệp vẫn còn đủ và raw URL vẫn
+chạy, chỉ là mở trên web thì nhìn như mất bớt.
 
 | Máy chủ | Thư mục |
 |---|---|

@@ -456,11 +456,16 @@ const thoat = (s) => String(s ?? "").replace(/[&<>"']/g,
 const khongDau = (s) => String(s ?? "").normalize("NFD")
   .replace(/[̀-ͯ]/g, "").replace(/đ/gi, "d").toLowerCase();
 
-/** Ô ảnh; thiếu ảnh thì hiện biểu tượng ảnh vỡ chứ đừng để khung trống trơn. */
+/**
+ * Ô ảnh; thiếu ảnh thì hiện biểu tượng ảnh vỡ chứ đừng để khung trống trơn.
+ *
+ * Ảnh chia thư mục con theo id/1000 (`Icons/0/3.png`): để phẳng một chỗ thì GitHub cắt danh
+ * sách ở 1000 tệp, mở trên web nhìn như mất bớt.
+ */
 function veAnh(id) {
   if (id === null || id === undefined || id < 0) return `<span class="o-anh trong"></span>`;
   return `<span class="o-anh"><img loading="lazy" decoding="async" alt=""
-    src="${T.nph}/Icons/${id}.png"
+    src="${T.nph}/Icons/${Math.floor(id / 1000)}/${id}.png"
     onerror="this.parentNode.classList.add('trong')"></span>`;
 }
 

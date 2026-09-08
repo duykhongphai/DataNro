@@ -18,11 +18,24 @@ public class KetQuaLuot
     public int SoLoi;
 
     /// <summary>
-    /// Id đã hỏi mà máy chủ <b>không hề trả lời</b> - phải hỏi lại ở lượt sau. Im lặng không
-    /// phân biệt được "không có ảnh" với "đã ngừng trả lời", nên tuyệt đối không suy đoán;
-    /// chỉ khi nào một lượt hỏi lại mà vẫn không ra gì thì mới kết luận là không có ảnh.
+    /// Id đã hỏi trong lúc máy chủ <b>vẫn còn đang trả lời</b> mà nó không trả lời - lần này
+    /// coi như đã thử thật. Hỏi đủ mấy lần thế này mà vẫn im thì mới kết luận không có ảnh.
     /// </summary>
-    public List<int> ChuaRo = new();
+    public List<int> ChuaRoDaThu = new();
+
+    /// <summary>
+    /// Id hỏi <b>sau</b> khi máy chủ đã im - coi như chưa thử lần nào, hỏi lại mà không tính
+    /// một lần thất bại.
+    ///
+    /// <para>
+    /// Thiếu chỗ phân biệt này là hỏng: lô 150 mà máy chủ chỉ trả khoảng 100 thì vị trí
+    /// 100-150 của lô nào cũng chết. Id bị trả về dồn vào cuối hàng, gặp nhau, rồi lại rơi
+    /// đúng khúc đuôi chết ấy - đủ ba lần là bị loại oan. Đo thực tế: 93 id có ảnh vẫn bị
+    /// loại, và chúng nằm thành dải liền nhau (224-227, 265-272, 389-400) đúng như một khúc
+    /// đuôi lô bị bỏ.
+    /// </para>
+    /// </summary>
+    public List<int> ChuaRoChuaThu = new();
 
     /// <summary>Máy chủ ngừng trả lời giữa chừng (im lặng quá lâu trong lúc vẫn đang hỏi).</summary>
     public bool BiNgatGiuaChung;
@@ -77,10 +90,51 @@ public sealed class BoAnh
     /// <summary>Mốc lần cuối nhận được gói ảnh, để đo khoảng lặng.</summary>
     private long nhipCuoi;
 
+    /// <summary>Đã gửi bao nhiêu lời hỏi tại thời điểm nhận gói gần nhất.</summary>
+    private int daGuiLucNhanCuoi;
+
+    /// <summary>Số lời hỏi đã gửi trong lượt này.</summary>
+    private int daGui;
+
     public BoAnh(Phien phien, string thuMucRa)
     {
         this.phien = phien;
         thuMuc = thuMucRa;
+    }
+
+    /// <summary>
+    /// Ảnh chia vào thư mục con theo <c>id / 1000</c>: <c>Icons/0/3.png</c>,
+    /// <c>Icons/17/17529.png</c>.
+    ///
+    /// <para>
+    /// Để phẳng một thư mục thì GitHub cắt danh sách ở 1000 tệp - tệp vẫn còn đủ và raw URL
+    /// vẫn chạy, chỉ là mở trên web thì thấy thiếu. Chia theo nghìn ra mười tám thư mục, đông
+    /// nhất hơn ba trăm tệp, dư chỗ kể cả khi game tăng gấp ba.
+    /// </para>
+    /// </summary>
+    public static string DuongDanAnh(string thuMucRa, int id, string duoi) =>
+        Path.Combine(thuMucRa, (id / 1000).ToString(), id + duoi);
+
+    /// <summary>
+    /// Dồn ảnh đang nằm phẳng ngay trong <c>Icons/</c> vào đúng thư mục con của nó. Chạy một
+    /// lần lúc đổi bố cục; sau đó không còn gì để dọn nên gọi bao nhiêu lần cũng vô hại.
+    /// </summary>
+    public static int DonVaoThuMucCon(string thuMucRa)
+    {
+        if (!Directory.Exists(thuMucRa)) return 0;
+
+        var n = 0;
+        foreach (var f in Directory.EnumerateFiles(thuMucRa))
+        {
+            if (!int.TryParse(Path.GetFileNameWithoutExtension(f), out var id)) continue;
+
+            var dich = DuongDanAnh(thuMucRa, id, Path.GetExtension(f));
+            Directory.CreateDirectory(Path.GetDirectoryName(dich)!);
+            File.Move(f, dich, true);
+            n++;
+        }
+
+        return n;
     }
 
     /// <summary>Id đã có sẵn ngoài đĩa, để lượt sau không hỏi lại.</summary>
@@ -89,7 +143,9 @@ public sealed class BoAnh
         var co = new HashSet<int>();
         if (!Directory.Exists(thuMucRa)) return co;
 
-        foreach (var f in Directory.EnumerateFiles(thuMucRa))
+        // Quét cả cây: bản cũ để phẳng, bản mới chia thư mục con - đọc được cả hai thì đổi
+        // bố cục không làm mất công tải lại từ đầu.
+        foreach (var f in Directory.EnumerateFiles(thuMucRa, "*", SearchOption.AllDirectories))
             if (int.TryParse(Path.GetFileNameWithoutExtension(f), out var id))
                 co.Add(id);
 
@@ -144,6 +200,8 @@ public sealed class BoAnh
 
         soRong = 0;
         soLoi = 0;
+        daGui = 0;
+        daGuiLucNhanCuoi = 0;
 
         // Đồng hồ phải chạy trước khi gắn tay bắt gói: hàm Nhan dùng nó ngay khi gói đầu về.
         var dongHo = Stopwatch.StartNew();
@@ -164,6 +222,7 @@ public sealed class BoAnh
                 }
 
                 phien.Doc.XinAnh(ids[i]);
+                Interlocked.Exchange(ref daGui, i + 1);
 
                 // Máy chủ đã ngừng trả lời hẳn thì hỏi tiếp chỉ tốn thời gian. Chỉ tính từ
                 // lúc đã nhận được ít nhất một trả lời, không thì lượt đầu chưa kịp về đã bỏ.
@@ -203,11 +262,19 @@ public sealed class BoAnh
             phien.Doc.NhanAnh -= Nhan;
         }
 
-        // Chỉ id nào máy chủ ĐÃ TRẢ LỜI mới coi là xong. Phần còn lại hỏi lại ở lượt sau,
-        // không suy đoán gì cả.
+        // Chỉ id nào máy chủ ĐÃ TRẢ LỜI mới coi là xong. Phần còn lại chia làm hai: hỏi lúc
+        // máy chủ còn đang trả lời thì tính là đã thử thật, hỏi sau khi nó im thì không.
+        //
+        // Trường hợp cả lượt KHÔNG có lấy một trả lời: mốc vẫn là 0 nên mọi id sẽ rơi vào
+        // "chưa thử" và không id nào bị loại - vòng lặp quay mãi không dứt. Phiên vừa đăng
+        // nhập tươi mà hỏi cả lô vẫn im thì đó là câu trả lời rồi: tính cả lô là đã thử.
+        var moc = SoDaTraLoi == 0 ? ids.Count : Volatile.Read(ref daGuiLucNhanCuoi);
         lock (khoa)
-            foreach (var id in ids)
-                if (!daTraLoi.Contains(id)) kq.ChuaRo.Add(id);
+            for (var i = 0; i < ids.Count; i++)
+            {
+                if (daTraLoi.Contains(ids[i])) continue;
+                (i < moc ? kq.ChuaRoDaThu : kq.ChuaRoChuaThu).Add(ids[i]);
+            }
 
         kq.SoNhan = SoDaNhan;
         kq.SoRong = soRong;
@@ -217,6 +284,7 @@ public sealed class BoAnh
         void Nhan(Message msg)
         {
             Interlocked.Exchange(ref nhipCuoi, dongHo.ElapsedMilliseconds);
+            Volatile.Write(ref daGuiLucNhanCuoi, Volatile.Read(ref daGui));
 
             try
             {
@@ -246,7 +314,9 @@ public sealed class BoAnh
                 var bytes = new byte[n];
                 for (var k = 0; k < n; k++) bytes[k] = unchecked((byte)raw[k]);
 
-                File.WriteAllBytes(Path.Combine(thuMuc, id + DuoiTep(bytes)), bytes);
+                var duong = DuongDanAnh(thuMuc, id, DuoiTep(bytes));
+                Directory.CreateDirectory(Path.GetDirectoryName(duong)!);
+                File.WriteAllBytes(duong, bytes);
                 lock (khoa) daNhan.Add(id);
             }
             catch (Exception)

@@ -108,6 +108,10 @@ public static class Program
     private static async Task TaiAnhAsync(Phien phien, CauHinh c)
     {
         var thuMucAnh = Path.Combine(c.Ra, c.NhaPhatHanh, "Icons");
+
+        var daDon = BoAnh.DonVaoThuMucCon(thuMucAnh);
+        if (daDon > 0) Console.WriteLine($"  dọn {daDon} ảnh cũ vào thư mục con");
+
         var tatCa = BoAnh.GomId(phien.Data);
         var daCo = BoAnh.DaCoTrenDia(thuMucAnh);
 
@@ -152,27 +156,38 @@ public static class Program
             tongNhan += kq.SoNhan;
             tongRong += kq.SoRong;
 
-            // Id nào máy chủ trả lời thì xong hẳn. Id im lặng quay lại cuối hàng, cộng một
-            // lần hỏi; hỏi đủ số lần mà vẫn im thì mới kết luận là nó không có ảnh.
-            var chuaRo = new HashSet<int>(kq.ChuaRo);
+            // Id máy chủ trả lời thì xong hẳn. Phần im lặng quay lại cuối hàng; chỉ id nào
+            // hỏi lúc máy chủ CÒN ĐANG trả lời mới bị tính một lần thử hỏng - id hỏi sau khi
+            // nó đã im thì coi như chưa thử, không thì cả khúc đuôi lô bị loại oan.
+            var daThu = new HashSet<int>(kq.ChuaRoDaThu);
+            var chuaThu = new HashSet<int>(kq.ChuaRoChuaThu);
             var boLuotNay = 0;
+
             foreach (var (id, soLanHoi) in lo)
             {
-                if (!chuaRo.Contains(id)) continue;
-                if (soLanHoi + 1 >= c.SoLanHoiLaiAnh)
+                if (chuaThu.Contains(id))
                 {
-                    boLuotNay++;
-                    boCuoc++;
+                    hang.Enqueue((id, soLanHoi));
                 }
-                else
+                else if (daThu.Contains(id))
                 {
-                    hang.Enqueue((id, soLanHoi + 1));
+                    if (soLanHoi + 1 >= c.SoLanHoiLaiAnh)
+                    {
+                        boLuotNay++;
+                        boCuoc++;
+                    }
+                    else
+                    {
+                        hang.Enqueue((id, soLanHoi + 1));
+                    }
                 }
             }
 
-            Console.WriteLine($"  lượt {luot}: hỏi {lo.Count}, trả lời {lo.Count - chuaRo.Count} " +
+            var traLoi = lo.Count - daThu.Count - chuaThu.Count;
+            Console.WriteLine($"  lượt {luot}: hỏi {lo.Count}, trả lời {traLoi} " +
                               $"(ảnh {kq.SoNhan}, rỗng {kq.SoRong}, hỏng {kq.SoLoi}), " +
-                              $"hỏi lại sau {chuaRo.Count - boLuotNay}, bỏ {boLuotNay}, " +
+                              $"hỏi lại {daThu.Count - boLuotNay + chuaThu.Count} " +
+                              $"(trong đó {chuaThu.Count} chưa kịp thử), bỏ {boLuotNay}, " +
                               $"còn trong hàng {hang.Count}" +
                               (kq.BiNgatGiuaChung ? " - máy chủ ngừng trả lời" : ""));
 

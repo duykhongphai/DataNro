@@ -59,7 +59,13 @@ public class CauHinh
     /// Mỗi lượt hỏi tối đa bao nhiêu id. Đo thực tế máy chủ trả khoảng một trăm gói mỗi phiên
     /// rồi im, nên lô lớn hơn ngần này chỉ tổ hỏi ra gió mà vẫn tốn 40ms mỗi cái.
     /// </summary>
-    public int SoAnhMoiLuot { get; set; } = 150;
+    /// <para>
+    /// Đo thực tế máy chủ trả khoảng một trăm gói mỗi phiên. Để lô <b>90</b> - dưới hạn mức
+    /// đó - thì mọi id trong lô đều được trả lời, không còn khúc đuôi chết nào. Nhờ vậy "hỏi
+    /// mà không thấy trả lời" nghĩa đúng là "không có ảnh", khỏi phải suy đoán gì thêm.
+    /// Người dùng chốt (2026-09-08): thà chạy thêm vài lượt còn hơn sót ảnh.
+    /// </para>
+    public int SoAnhMoiLuot { get; set; } = 90;
 
     /// <summary>
     /// Hỏi một id mấy lần (ở mấy phiên khác nhau) mà vẫn không thấy trả lời thì mới kết luận
