@@ -86,10 +86,10 @@ public static class Program
         Console.WriteLine("Đã ghi: " + Path.GetFullPath(thuMuc));
         Console.WriteLine("  " + phien.Data);
 
-        if (c.TaiTaiNguyen) await TaiTaiNguyenAsync(phien, c);
         if (c.TaiMap) await TaiMapAsync(phien, c);
         if (c.TaiAnh) await TaiAnhAsync(phien, c);
         if (c.TaiQuai) await TaiQuaiAsync(phien, c);
+        if (c.IdHieuUngToiDa > 0) await TaiHieuUngAsync(phien, c);
 
         // Bảng kích thước ảnh: quét cả thư mục chứ không chỉ phần vừa tải, và chạy cả khi lượt
         // này bỏ ảnh - lần chạy trước có thể đã thêm ảnh mà chưa kịp ghi bảng.
@@ -102,7 +102,8 @@ public static class Program
         {
             var soNpc = BoGhepHinh.GhepNpc(phien.Data, thuMucNph);
             var soQuai = BoGhepHinh.GhepQuai(thuMucNph);
-            Console.WriteLine($"Ghép sẵn hình: {soNpc} NPC, {soQuai} quái");
+            var soEff = BoGhepHinh.GhepHieuUng(thuMucNph);
+            Console.WriteLine($"Ghép sẵn hình: {soNpc} NPC, {soQuai} quái, {soEff} hiệu ứng");
         }
         catch (Exception e)
         {
@@ -129,68 +130,72 @@ public static class Program
     }
 
     /// <summary>
-    /// Xin cả kho tài nguyên của client (gói -74) và đổ ra đĩa theo đúng cây đường dẫn máy chủ
-    /// khai. Đây là chỗ chứa ảnh nền map: <c>/t/&lt;tileID&gt;/t_NN.png</c>.
+    /// Quét mù hiệu ứng (gói -66). Dùng đúng luật của hình quái: hỏi lô, im lặng là không có,
+    /// hỏi lại vài lượt rồi mới kết luận.
     /// </summary>
-    private static async Task TaiTaiNguyenAsync(Phien phien, CauHinh c)
+    private static async Task TaiHieuUngAsync(Phien phien, CauHinh c)
     {
-        var thuMuc = Path.Combine(c.Ra, c.NhaPhatHanh, "Res");
-        Directory.CreateDirectory(thuMuc);
+        var thuMuc = Path.Combine(c.Ra, c.NhaPhatHanh, "Effects");
+        var daCo = BoHieuUng.DaCoTrenDia(thuMuc);
+        var khongCo = BoAnh.DocKhongCo(thuMuc);
 
-        // Kho này gần như không đổi (phiên bản tài nguyên cả năm mới nhích), mà tải một lượt
-        // mất chục MB - có rồi thì thôi. Muốn lấy lại thì xoá thư mục Res đi.
-        var daCo = Directory.EnumerateFiles(thuMuc, "*", SearchOption.AllDirectories).Take(50).Count();
-        if (daCo >= 50)
+        var hang = new Queue<(int id, int soLan)>(
+            Enumerable.Range(0, c.IdHieuUngToiDa + 1)
+                .Where(id => !daCo.Contains(id) && !khongCo.Contains(id))
+                .Select(id => (id, 0)));
+
+        Console.WriteLine($"Hiệu ứng: quét mù 0..{c.IdHieuUngToiDa}, đã có sẵn {daCo.Count}, " +
+                          $"biết là không có {khongCo.Count}, cần hỏi {hang.Count}");
+        if (hang.Count == 0) return;
+
+        using var het = new CancellationTokenSource(c.ChoQuaiMs);
+        var bo = new BoHieuUng(phien, thuMuc);
+        var boCuoc = new List<int>();
+
+        for (var luot = 1; luot <= c.SoLuotAnh && hang.Count > 0; luot++)
         {
-            Console.WriteLine($"Kho tài nguyên: đã có sẵn, bỏ qua ({Path.GetFullPath(thuMuc)})");
-            return;
-        }
+            if (het.IsCancellationRequested) break;
 
-        var so = 0;
-        var byteTong = 0L;
-        var xong = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        void Nhan(string duong, byte[] du)
-        {
-            try
+            if (!phien.DaNoi && !await phien.DangNhapCoThuLaiAsync(c.Host, c.Port, c.TaiKhoan,
+                    c.MatKhau, c.ChoDangNhapMs, c.SoLanDangNhap, c.NghiGiuaLuotMs, het.Token))
             {
-                // Đường dẫn máy chủ khai kiểu "/t/5/t_01.png"; ghép vào thư mục ra và chặn mọi
-                // trò leo ngược ".." kẻo một cái tên xấu ghi đè lung tung ngoài thư mục.
-                var sach = duong.Replace('\\', '/').TrimStart('/');
-                if (sach.Contains("..")) return;
-
-                var dich = Path.Combine(thuMuc, sach.Replace('/', Path.DirectorySeparatorChar));
-                Directory.CreateDirectory(Path.GetDirectoryName(dich)!);
-                File.WriteAllBytes(dich, du);
-                Interlocked.Increment(ref so);
-                Interlocked.Add(ref byteTong, du.Length);
+                Console.WriteLine("  hiệu ứng: nối lại không được, dừng.");
+                break;
             }
-            catch (Exception)
+
+            var lo = new List<(int id, int soLan)>();
+            while (lo.Count < c.SoHieuUngMoiLuot && hang.Count > 0) lo.Add(hang.Dequeue());
+
+            var chuaRo = new HashSet<int>(
+                await bo.MotLuotAsync(lo.Select(x => x.id).ToList(), c.NhipQuaiMs, c.LangAnhMs, het.Token));
+
+            var boLuotNay = 0;
+            foreach (var (id, soLan) in lo)
             {
-                // một tệp hỏng không được kéo cả kho xuống theo
+                if (!chuaRo.Contains(id)) continue;
+                if (soLan + 1 >= c.SoLanHoiLaiAnh)
+                {
+                    boLuotNay++;
+                    boCuoc.Add(id);
+                }
+                else
+                {
+                    hang.Enqueue((id, soLan + 1));
+                }
             }
+
+            Console.WriteLine($"  hiệu ứng lượt {luot}: hỏi {lo.Count}, trả lời {lo.Count - chuaRo.Count}, " +
+                              $"hỏi lại {chuaRo.Count - boLuotNay}, bỏ {boLuotNay}, còn {hang.Count}");
+
+            if (hang.Count == 0) break;
+            phien.Ngat();
         }
 
-        phien.Doc.NhanTepTaiNguyen += Nhan;
-        phien.Doc.XongTaiNguyen += () => xong.TrySetResult(true);
+        bo.Ghi();
+        BoAnh.GhiKhongCo(thuMuc, boCuoc);
 
-        try
-        {
-            phien.Doc.XinTaiNguyen(1);
-            using var het = new CancellationTokenSource(c.ChoTaiNguyenMs);
-            await Task.WhenAny(xong.Task, Task.Delay(Timeout.Infinite, het.Token))
-                .ConfigureAwait(false);
-        }
-        catch (OperationCanceledException)
-        {
-            // hết giờ thì lấy được bao nhiêu hay bấy nhiêu
-        }
-        finally
-        {
-            phien.Doc.NhanTepTaiNguyen -= Nhan;
-        }
-
-        Console.WriteLine($"Kho tài nguyên: {so} tệp, {byteTong / 1024} KB → {Path.GetFullPath(thuMuc)}");
+        var co = BoHieuUng.DaCoTrenDia(thuMuc).Count;
+        Console.WriteLine($"  hiệu ứng: {co} tấm sprite → {Path.GetFullPath(thuMuc)}");
     }
 
     /// <summary>

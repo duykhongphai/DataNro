@@ -133,12 +133,10 @@ jobs:
             # timeout là hàng rào cứng cuối cùng: client đã tự có hạn giờ cho từng bước, nhưng
             # một máy chủ treo kiểu lạ thì không được phép ngốn hết cả lượt của mười bảy máy
             # còn lại. Máy đi tải ảnh cần rộng tay hơn hẳn.
-            # Kho tài nguyên (ảnh nền map) chỉ tải một lần, máy chủ đầu tiên nào chạy được
-            # thì lấy - có rồi thì client tự bỏ qua.
             if [ -z "$co_anh" ]; then han=2700; else han=420; fi
 
             echo "::group::$NRO_MAYCHU"
-            if timeout -k 15 "$han" "$may" $co_anh --tai-res; then
+            if timeout -k 15 "$han" "$may" $co_anh; then
               xong=$((xong + 1))
               # Chỉ tắt lượt ảnh khi nó thật sự chạy xong - máy chủ đầu mà chết thì máy kế
               # tiếp phải gánh việc tải ảnh, không thì cả hôm đó không có ảnh mới nào.
@@ -241,6 +239,7 @@ jobs:
             zip -q -r -0 "taive/$nph-anh.zip" "$nph/Icons"               $([ -d "$nph/NpcHinh" ] && echo "$nph/NpcHinh")
             [ -d "$nph/Mobs" ] && zip -q -r -0 "taive/$nph-quai.zip" "$nph/Mobs"               $([ -d "$nph/MobHinh" ] && echo "$nph/MobHinh")
             [ -d "$nph/Maps" ] && zip -q -r "taive/$nph-map.zip" "$nph/Maps"
+            [ -d "$nph/Effects" ] && zip -q -r -0 "taive/$nph-hieuung.zip" "$nph/Effects"
 
             # JSON thì nén thật, chữ nén được tới một phần mười.
             zip -q -r "taive/$nph-json.zip" "$nph" -i "$nph/*/*.json"

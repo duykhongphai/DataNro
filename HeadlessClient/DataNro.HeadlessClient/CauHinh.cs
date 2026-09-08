@@ -70,11 +70,15 @@ public class CauHinh
     /// <summary>Tải luôn hình sprite của từng mẫu quái.</summary>
     public bool TaiQuai { get; set; } = true;
 
-    /// <summary>Xin cả kho tài nguyên của client (gói -74) - trong đó có ảnh nền map.</summary>
-    public bool TaiTaiNguyen { get; set; }
+    /// <summary>
+    /// Quét mù id hiệu ứng từ 0 tới số này (gói -66). 0 là tắt. Không có bảng nào liệt kê id
+    /// hiệu ứng nên chỉ còn cách hỏi hết; client tham chiếu tới quãng 100-110 nên vài trăm là
+    /// dư. Ai không trả lời thì ghi vào <c>Effects/KhongCo.json</c>, lượt sau khỏi hỏi lại.
+    /// </summary>
+    public int IdHieuUngToiDa { get; set; } = 300;
 
-    /// <summary>Hết giờ cho việc tải kho tài nguyên.</summary>
-    public int ChoTaiNguyenMs { get; set; } = 600000;
+    /// <summary>Mỗi lượt hỏi tối đa bao nhiêu hiệu ứng.</summary>
+    public int SoHieuUngMoiLuot { get; set; } = 40;
 
     /// <summary>Xin luôn bố cục ô của từng map (gói -28 nhánh 10).</summary>
     public bool TaiMap { get; set; } = true;
@@ -196,6 +200,7 @@ public class CauHinh
         Moi("NRO_RA", v => c.Ra = v);
         Moi("NRO_KHONG_ANH", _ => c.TaiAnh = false);
         Moi("NRO_ID_ANH_TOI_DA", v => { if (int.TryParse(v, out var m)) c.IdAnhToiDa = m; });
+        Moi("NRO_ID_HIEU_UNG_TOI_DA", v => { if (int.TryParse(v, out var hu)) c.IdHieuUngToiDa = hu; });
         Moi("NRO_SONG_SONG", v => { if (int.TryParse(v, out var ss)) c.SoPhienSongSong = ss; });
         Moi("NRO_CACH_DANG_NHAP", v => { if (int.TryParse(v, out var cdn2)) c.CachDangNhapMs = cdn2; });
 
@@ -236,7 +241,7 @@ public class CauHinh
                 case "--khong-anh": c.TaiAnh = false; break;
                 case "--khong-quai": c.TaiQuai = false; break;
                 case "--khong-map": c.TaiMap = false; break;
-                case "--tai-res": c.TaiTaiNguyen = true; break;
+                case "--id-hieu-ung-toi-da": if (int.TryParse(KeTiep(), out var ih)) c.IdHieuUngToiDa = ih; break;
                 case "--nhip-map": if (int.TryParse(KeTiep(), out var nm)) c.NhipMapMs = nm; break;
                 case "--lo-quai": if (int.TryParse(KeTiep(), out var lq)) c.SoQuaiMoiLuot = lq; break;
                 case "--nhip-quai": if (int.TryParse(KeTiep(), out var nq)) c.NhipQuaiMs = nq; break;

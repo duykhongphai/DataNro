@@ -249,6 +249,27 @@ vẽ ra gì.
 Bốn mẫu quái (`28`, `29`, `30`, `85`) thì máy chủ không trả lời gói xin hình, nên không có
 tấm sprite nào cả.
 
+### Hiệu ứng
+
+Xin bằng **gói `-66`** (`Service.getEffData`): gửi lên `short id`, máy chủ trả `short id`, mảng
+dữ liệu khung, `sbyte kiểu`, rồi mảng PNG. Nội dung y hệt hình quái — sprite kèm bảng ô cắt và
+bảng khung — nhưng **khác thứ tự**: bên gói `11` byte kiểu đứng ngay sau id, ở đây nó nằm sau
+mảng dữ liệu. Đọc nhầm thứ tự thì ra một mớ vô nghĩa chứ không báo lỗi.
+
+Không có bảng nào liệt kê id hiệu ứng (client chỉ hỏi từng cái khi cần vẽ), nên phải quét mù
+như ảnh. Quét 0–300 được **98 hiệu ứng**.
+
+| Thư mục | Nội dung |
+|---|---|
+| `Effects/<id>.png` + `EffectFrames.json` | sprite gốc và bảng khung, để tự dựng |
+| `EffectHinh/<id>.png` + `Anim.json` | dải khung ngang ghép sẵn, mỗi ô một khung |
+
+Dải ngang là để trang web chạy hoạt ảnh bằng đúng một câu CSS `steps(n)` — không canvas, không
+JS đếm nhịp. Thứ tự ô theo `anim` chứ không theo `frames`, vì `anim` mới là trình tự chiếu và
+nó lặp khung (có hiệu ứng 69 khung mà chuỗi chiếu dài 155). Mọi ô cùng cỡ, lấy theo hộp bao
+chung của tất cả khung, không thì hình nhảy loạn khi đổi khung. Dải bị cắt bớt khi vượt 16000
+điểm ảnh chiều ngang (trình duyệt có trần cứng quanh 65535) hoặc 12 triệu điểm ảnh tổng.
+
 ### Bố cục map
 
 `Maps.json` chỉ có id với tên — DataNRO của ElectroHeavenVN cũng vậy, họ không lấy phần vẽ map.

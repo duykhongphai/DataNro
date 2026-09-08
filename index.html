@@ -221,6 +221,29 @@ main { max-width: 1560px; margin: 0 auto; padding: 18px 20px 80px; }
   max-width: 96px; max-height: 96px; object-fit: contain;
 }
 
+/* Hiệu ứng chạy bằng đúng một câu CSS: ảnh ghép sẵn là dải ngang, mỗi ô một khung, nên
+   steps(n) dịch nền từng ô một. Không canvas, không JS đếm nhịp - mở một trang mấy chục hiệu
+   ứng cùng chạy vẫn nhẹ vì trình duyệt đẩy hết xuống GPU. */
+.eff-o {
+  width: 104px; height: 104px; flex: none;
+  border-radius: 12px; background: var(--chim); border: 1px solid var(--vien-mo);
+  overflow: hidden; position: relative;
+}
+.eff-o > span {
+  position: absolute; left: 50%; top: 50%;
+  width: var(--w); height: var(--h);
+  background-image: var(--tam); background-repeat: no-repeat;
+  transform: translate(-50%, -50%) scale(var(--co));
+  animation: chay-eff calc(var(--n) * 80ms) steps(var(--n)) infinite;
+}
+@keyframes chay-eff {
+  to { background-position: calc(var(--w) * var(--n) * -1) 0; }
+}
+/* Ai bật "giảm chuyển động" trong hệ điều hành thì đứng yên ở khung đầu. */
+@media (prefers-reduced-motion: reduce) {
+  .eff-o > span { animation: none; }
+}
+
 /* Hình quái: mỗi mảnh là một ô cắt trên tấm sprite chung, nên dùng background-position thay
    vì cắt bằng thẻ img. Khung ngoài thu nhỏ cả cụm cho vừa ô. */
 .quai-hinh {
@@ -456,6 +479,7 @@ footer {
         <a class="nut" data-goi="anh">Ảnh (icon + hình NPC)</a>
         <a class="nut" data-goi="quai">Dữ liệu quái</a>
         <a class="nut" data-goi="map">Dữ liệu map</a>
+        <a class="nut" data-goi="hieuung">Hiệu ứng</a>
         <a class="nut" data-goi="json">Toàn bộ JSON</a>
         <span class="tien-do">nén sẵn, cập nhật mỗi sáng</span>
       </div>
@@ -529,7 +553,10 @@ const MUC = {
   npc:     { ten: "NPC",      tep: "NpcTemplates.json" },
   chieu:   { ten: "Kĩ năng",  tep: "NClasses.json" },
   option:  { ten: "Option",   tep: "ItemOptionTemplates.json" },
-  map:     { ten: "Map",      tep: "Maps.json" }
+  map:     { ten: "Map",      tep: "Maps.json" },
+  // Hiệu ứng không nằm trong bảng nào của máy chủ nên cũng không có tệp JSON theo máy chủ;
+  // nó dùng chung cho cả nhà phát hành, đọc thẳng bảng dải khung.
+  hieuung: { ten: "Hiệu ứng", tep: null }
 };
 
 const MAC_DINH = {
@@ -546,7 +573,7 @@ let toanBo = [];      // toàn bộ mục sau khi lọc, chưa cắt trang
 let trang = 0;        // trang đang xem, đếm từ 0
 
 /** Mỗi trang bao nhiêu mục. Thẻ có ảnh thì nặng hơn hẳn dòng chữ nên để ít hơn. */
-const MOI_TRANG = { vatpham: 60, quai: 60, npc: 60, kinang: 12, option: 300, map: 300 };
+const MOI_TRANG = { vatpham: 60, quai: 60, npc: 60, hieuung: 36, kinang: 12, option: 300, map: 300 };
 const $ = (id) => document.getElementById(id);
 
 // ══════════ tiện ích ══════════
@@ -595,6 +622,13 @@ const veHinhGhep = (thuMuc, id, lop) =>
     src="${T.nph}/${thuMuc}/${id}.png" onerror="this.style.display='none'"></span>`;
 
 const veHinhNpc = (x) => veHinhGhep("NpcHinh", x.npcTemplateId, "npc-hinh");
+
+/** Một hiệu ứng đang chạy. <c>x</c> là mục trong Anim.json: id, cỡ một ô, số ô. */
+function veHieuUng(x) {
+  const co = Math.min(1, 96 / Math.max(x.w, x.h, 1));
+  return `<span class="eff-o"><span style="--w:${x.w}px;--h:${x.h}px;--n:${x.n};
+    --co:${co.toFixed(3)};--tam:url('${T.nph}/EffectHinh/${x.id}.png')"></span></span>`;
+}
 const veHinhQuai = (id) => veHinhGhep("MobHinh", id, "quai-hinh");
 
 /** Chip bấm là chép. Đây là thứ dùng nhiều nhất của trang này nên để nó thật rõ. */
@@ -716,11 +750,30 @@ async function layQuai() {
 }
 
 async function layMuc(muc) {
+  if (muc === "hieuung") return layHieuUng();
+
   const khoa = `${T.nph}/${T.sv}/${MUC[muc].tep}`;
   if (kho.has(khoa)) return kho.get(khoa);
   const dl = await docJson(khoa);
   kho.set(khoa, dl);
   return dl;
+}
+
+/**
+ * Bảng dải khung của hiệu ứng: mỗi mục là <c>{id, w, h, n}</c> - cỡ một ô và số ô trong dải.
+ * Ảnh đã ghép sẵn lúc chạy workflow nên trang chỉ việc chạy dải, không phải cắt ghép gì.
+ */
+async function layHieuUng() {
+  const khoa = `${T.nph}/EffectHinh/Anim.json`;
+  if (kho.has(khoa)) return kho.get(khoa);
+  let ds = [];
+  try {
+    ds = await docJson(khoa);
+  } catch {
+    // chưa chạy lượt quét hiệu ứng
+  }
+  kho.set(khoa, ds);
+  return ds;
 }
 
 // ══════════ thẻ ══════════
@@ -779,6 +832,20 @@ const VE = {
       ${chep(x.id)}<span class="nho-ten">${thoat(x.name)}</span>
       <span class="nho-phu">${x.type}</span>
     </article>`).join(""),
+
+  hieuung: (ds) => ds.map((x, i) => `<article class="the" data-i="${i}">
+    <div class="the-tren">
+      ${veHieuUng(x)}
+      <div class="the-chu">
+        <div class="the-ten">Hiệu ứng ${x.id}</div>
+        <div class="the-chip">
+          <span class="chip">${x.n} khung</span>
+          <span class="chip xam">${x.w} × ${x.h} px</span>
+        </div>
+      </div>
+    </div>
+    <div class="the-duoi">${chepNhan("id ", x.id)}</div>
+  </article>`).join(""),
 
   map: (ds, bang) => `<div class="o-dau"><span class="c-id">Id</span>
     <span class="c-ten">Tên map</span><span class="c-loai">Cỡ lưới</span></div>` +
@@ -869,6 +936,14 @@ const CHI_TIET = {
     anh: -1, ten: x.name, phu: `Option vật phẩm · id ${x.id}`,
     dong: dongTT("Id option", x.id) + dongTT("Loại", x.type, false) + dongTT("Tên", x.name)
   }),
+  hieuung: (x) => ({
+    hinh: veHieuUng(x), ten: `Hiệu ứng ${x.id}`, phu: `Hiệu ứng · id ${x.id}`,
+    dong: dongTT("Id hiệu ứng", x.id) + dongTT("Số khung", x.n, false) +
+      dongTT("Cỡ một khung", `${x.w} × ${x.h} px`, false) +
+      dongTT("Ảnh dải", `EffectHinh/${x.id}.png`) +
+      dongTT("Sprite gốc", `Effects/${x.id}.png`)
+  }),
+
   map: (x) => {
     const bc = phuHienTai.get?.(x.id);
     return {
@@ -959,7 +1034,9 @@ async function ve() {
   const phien = ++phienVe;
   const noi = $("noi-dung");
   $("phan-trang").hidden = true;
-  $("link-json").href = `${T.nph}/${T.sv}/${MUC[T.muc].tep}`;
+  $("link-json").href = MUC[T.muc].tep
+    ? `${T.nph}/${T.sv}/${MUC[T.muc].tep}`
+    : `${T.nph}/Effects/EffectFrames.json`;
   datLinkTaiVe();
   noi.className = T.muc === "map" || T.muc === "option" ? "luoi" : "dan";
 

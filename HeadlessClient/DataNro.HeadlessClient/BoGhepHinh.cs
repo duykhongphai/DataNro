@@ -202,6 +202,156 @@ public static class BoGhepHinh
         return n;
     }
 
+    // ==================== hiệu ứng ====================
+
+    /// <summary>Một hiệu ứng đã ghép: dải khung nằm ngang, mỗi ô một khung.</summary>
+    public class DaiRa
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("id")] public int Id { get; set; }
+
+        /// <summary>Rộng/cao của MỘT ô, tính bằng điểm ảnh.</summary>
+        [System.Text.Json.Serialization.JsonPropertyName("w")] public int W { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("h")] public int H { get; set; }
+
+        /// <summary>Số ô trong dải, cũng là số khung của hoạt ảnh.</summary>
+        [System.Text.Json.Serialization.JsonPropertyName("n")] public int N { get; set; }
+    }
+
+    /// <summary>Dải dài quá thì trình duyệt phải giữ một tấm ảnh khổng lồ chỉ để chạy một hiệu ứng.</summary>
+    private const int ToiDaKhung = 120;
+
+    /// <summary>
+    /// Trần chiều ngang của dải. Trình duyệt có giới hạn cứng quanh 65535 điểm ảnh mỗi chiều,
+    /// mà hiệu ứng to nhất ghép đủ 120 khung đã ra 63840 - sát mép, và tấm ảnh ngần ấy thì mở
+    /// một trang là ngốn cả trăm MB bộ nhớ. Cắt bớt số khung cho vừa: hiệu ứng vốn lặp, chạy
+    /// ba chục khung đầu vẫn ra đúng nhịp.
+    /// </summary>
+    private const int ToiDaRongDai = 16000;
+
+    /// <summary>Trần tổng số điểm ảnh của cả dải - giữ mỗi tệp trong tầm vài MB.</summary>
+    private const long ToiDaDiem = 12_000_000;
+
+    /// <summary>
+    /// Ghép mỗi hiệu ứng thành <b>một dải khung nằm ngang</b> ra
+    /// <c>&lt;nhà phát hành&gt;/EffectHinh/&lt;id&gt;.png</c>, kèm bảng <c>Anim.json</c>.
+    ///
+    /// <para>
+    /// Dải chứ không phải một khung: hiệu ứng phải chạy mới ra hồn, mà dải ngang thì trang web
+    /// chạy được bằng đúng một câu CSS <c>steps()</c> - không cần canvas, không cần JS đếm nhịp.
+    /// Mọi ô cùng cỡ, lấy theo hộp bao chung của tất cả khung, không thì hình nhảy loạn khi
+    /// đổi khung.
+    /// </para>
+    ///
+    /// <para>
+    /// Thứ tự ô theo <c>anim</c> chứ không theo <c>frames</c>: <c>anim</c> mới là trình tự
+    /// chiếu, và nó lặp lại khung - có hiệu ứng 69 khung mà chuỗi chiếu dài 155.
+    /// </para>
+    /// </summary>
+    public static int GhepHieuUng(string goc)
+    {
+        var thuMuc = Path.Combine(goc, "Effects");
+        var bang = Path.Combine(thuMuc, "EffectFrames.json");
+        if (!File.Exists(bang)) return 0;
+
+        List<HieuUngRa> ds;
+        try
+        {
+            ds = JsonSerializer.Deserialize<List<HieuUngRa>>(File.ReadAllText(bang));
+        }
+        catch (Exception)
+        {
+            return 0;
+        }
+
+        if (ds == null) return 0;
+
+        var thuMucRa = Path.Combine(goc, "EffectHinh");
+        Directory.CreateDirectory(thuMucRa);
+
+        var moTa = new List<DaiRa>();
+        foreach (var e in ds)
+        {
+            var duong = Path.Combine(thuMuc, e.Id + ".png");
+            if (!File.Exists(duong) || e.Frames == null || e.Frames.Length == 0) continue;
+
+            byte[] tam;
+            int rongTam, caoTam;
+            try
+            {
+                tam = AnhPng.Doc(File.ReadAllBytes(duong), out rongTam, out caoTam);
+            }
+            catch (Exception)
+            {
+                continue;
+            }
+
+            if (tam == null) continue;
+
+            var ti = e.Scale <= 0 ? Phong : e.Scale;
+            var o = e.Rects.ToDictionary(r => r.Id);
+
+            // Chuỗi chiếu; hiệu ứng nào không có thì cứ chạy lần lượt từng khung.
+            var chuoi = e.Anim != null && e.Anim.Length > 0
+                ? e.Anim.Where(x => x >= 0 && x < e.Frames.Length).Select(x => (int)x).ToList()
+                : Enumerable.Range(0, e.Frames.Length).ToList();
+            if (chuoi.Count == 0) continue;
+            if (chuoi.Count > ToiDaKhung) chuoi = chuoi.Take(ToiDaKhung).ToList();
+
+            // Hộp bao chung của mọi khung sẽ dùng, tính bằng đơn vị game.
+            int x0 = int.MaxValue, y0 = int.MaxValue, x1 = int.MinValue, y1 = int.MinValue;
+            foreach (var k in chuoi.Distinct())
+            foreach (var m in e.Frames[k])
+            {
+                if (!o.TryGetValue(m.O, out var r)) continue;
+                if (x0 > m.Dx) x0 = m.Dx;
+                if (y0 > m.Dy) y0 = m.Dy;
+                if (x1 < m.Dx + r.W) x1 = m.Dx + r.W;
+                if (y1 < m.Dy + r.H) y1 = m.Dy + r.H;
+            }
+
+            if (x0 == int.MaxValue) continue;
+
+            var rongO = (x1 - x0) * ti;
+            var caoO = (y1 - y0) * ti;
+            if (rongO <= 0 || caoO <= 0) continue;
+
+            // Cắt cho vừa hai cái trần - chiều ngang và tổng số điểm ảnh - chứ không bỏ hẳn:
+            // hiệu ứng nào hộp bao to mà chuỗi dài thì chạy ít khung hơn, vẫn còn hơn không có.
+            var vua = Math.Min(ToiDaRongDai / rongO, (int)(ToiDaDiem / ((long)rongO * caoO)));
+            vua = Math.Max(1, vua);
+            if (chuoi.Count > vua) chuoi = chuoi.Take(vua).ToList();
+
+            // Một khung thôi mà đã quá khổ thì đành chịu.
+            if ((long)rongO * caoO > ToiDaDiem) continue;
+
+            var rongDai = rongO * chuoi.Count;
+            var dai = new byte[rongDai * caoO * 4];
+
+            for (var i = 0; i < chuoi.Count; i++)
+            foreach (var m in e.Frames[chuoi[i]])
+            {
+                if (!o.TryGetValue(m.O, out var r)) continue;
+
+                var cat = Cat(tam, rongTam, caoTam, r.X * ti, r.Y * ti, r.W * ti, r.H * ti);
+                if (cat == null) continue;
+
+                Dan(dai, rongDai, caoO,
+                    new Manh { Rgba = cat, Rong = r.W * ti, Cao = r.H * ti },
+                    i * rongO + (m.Dx - x0) * ti, (m.Dy - y0) * ti);
+            }
+
+            File.WriteAllBytes(Path.Combine(thuMucRa, e.Id + ".png"), AnhPng.Ghi(dai, rongDai, caoO));
+            moTa.Add(new DaiRa { Id = e.Id, W = rongO, H = caoO, N = chuoi.Count });
+        }
+
+        File.WriteAllText(Path.Combine(thuMucRa, "Anim.json"),
+            JsonSerializer.Serialize(moTa.OrderBy(x => x.Id),
+                new JsonSerializerOptions { WriteIndented = false }) + "\n");
+
+        return moTa.Count;
+    }
+
     // ==================== dùng chung ====================
 
     /// <summary>Xếp các mảnh lên một tấm vừa khít hộp bao của chúng.</summary>
