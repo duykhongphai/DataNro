@@ -220,6 +220,41 @@ jobs:
           sed -i "s|<lastmod>.*</lastmod>|<lastmod>$(date -u +%Y-%m-%d)</lastmod>|" sitemap.xml
           cat sitemap.xml
 
+      - name: Đóng gói tải về
+        # Nén sẵn ở đây rồi treo lên Release, chứ để trang tự tải từng tệp mà gói thì mười bảy
+        # nghìn ảnh là mười bảy nghìn lượt xin - chờ mòn mỏi mà còn ngốn hết bộ nhớ của tab.
+        # Không nhét zip vào repo: một tệp quá 100 MB là GitHub chặn thẳng, mà kể cả lọt thì
+        # mỗi ngày một bản mới cũng phình lịch sử git rất nhanh. Release thì không tính vào đó.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          mkdir -p taive
+
+          for nph in */; do
+            nph="${nph%/}"
+            [ -d "$nph/Icons" ] || continue
+
+            # -0 là xếp cạnh nhau không nén: PNG vốn đã nén rồi, ép thêm chỉ tốn thời gian.
+            zip -q -r -0 "taive/$nph-anh.zip" "$nph/Icons"               $([ -d "$nph/NpcHinh" ] && echo "$nph/NpcHinh")
+            [ -d "$nph/Mobs" ] && zip -q -r -0 "taive/$nph-quai.zip" "$nph/Mobs"               $([ -d "$nph/MobHinh" ] && echo "$nph/MobHinh")
+            [ -d "$nph/Maps" ] && zip -q -r "taive/$nph-map.zip" "$nph/Maps"
+
+            # JSON thì nén thật, chữ nén được tới một phần mười.
+            zip -q -r "taive/$nph-json.zip" "$nph" -i "$nph/*/*.json"
+          done
+
+          ls -lh taive
+
+      - name: Treo lên Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          gh release view du-lieu >/dev/null 2>&1 ||             gh release create du-lieu --title "Dữ liệu mới nhất"               --notes "Bản nén tự động, ghi đè mỗi lần workflow chạy."
+          gh release upload du-lieu taive/*.zip --clobber
+          rm -rf taive
+
       - name: Commit và đẩy
         run: |
           git config user.name "github-actions[bot]"

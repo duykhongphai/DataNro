@@ -32,6 +32,12 @@ chạy, chỉ là mở trên web thì nhìn như mất bớt.
 tính hộp bao hình NPC mà không phải đợi ba mảnh tải xong. `Icons/KhongCo.json` là danh sách id
 máy chủ đã xác nhận là không có ảnh, để lượt sau khỏi hỏi lại.
 
+Bản nén để tải về **không nằm trong repo** mà treo ở
+[Release `du-lieu`](https://github.com/duykhongphai/DataNro/releases/tag/du-lieu), ghi đè mỗi
+lần workflow chạy: `<nhà phát hành>-anh.zip`, `-quai.zip`, `-map.zip`, `-json.zip`. Một tệp quá
+100 MB là GitHub chặn thẳng, mà mỗi ngày một bản mới cũng phình lịch sử git rất nhanh — Release
+thì không tính vào đó.
+
 `TeaMobi/Maps/MapTiles.json` là bố cục ô của từng map: `{"id":0,"w":52,"h":24,"tiles":[…]}`,
 mảng `tiles` dài `w*h`, mỗi số là chỉ số ảnh trong bộ tile của map, `0` là ô trống.
 
