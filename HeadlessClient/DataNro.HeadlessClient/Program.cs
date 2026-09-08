@@ -86,6 +86,7 @@ public static class Program
         Console.WriteLine("Đã ghi: " + Path.GetFullPath(thuMuc));
         Console.WriteLine("  " + phien.Data);
 
+        if (c.TaiTaiNguyen) await TaiTaiNguyenAsync(phien, c);
         if (c.TaiMap) await TaiMapAsync(phien, c);
         if (c.TaiAnh) await TaiAnhAsync(phien, c);
         if (c.TaiQuai) await TaiQuaiAsync(phien, c);
@@ -128,20 +129,70 @@ public static class Program
     }
 
     /// <summary>
-    /// Hỏi máy chủ từng ảnh icon rồi ghi ra <c>&lt;ra&gt;/&lt;nhà phát hành&gt;/Icons/</c>.
-    ///
-    /// <para>
-    /// Ảnh để chung một thư mục theo nhà phát hành chứ không theo từng máy chủ: id ảnh giống
-    /// nhau trên mọi máy chủ cùng nhà phát hành, tách ra chỉ tổ nhân đôi vài nghìn tệp.
-    /// </para>
-    ///
-    /// <para>
-    /// Máy chủ chỉ trả khoảng một trăm ảnh mỗi phiên rồi im, nên phải chia nhiều lượt, mỗi
-    /// lượt một lô nhỏ rồi ngắt ra đăng nhập lại. <b>Chỉ id nào máy chủ đã trả lời mới bị gạch
-    /// khỏi danh sách</b>; phần im lặng quay lại hàng chờ nguyên vẹn. Nhờ vậy không thể xảy
-    /// ra chuyện bỏ sót: vòng lặp chỉ dừng khi hỏi lại mà vẫn không ra thêm cái nào.
-    /// </para>
+    /// Xin cả kho tài nguyên của client (gói -74) và đổ ra đĩa theo đúng cây đường dẫn máy chủ
+    /// khai. Đây là chỗ chứa ảnh nền map: <c>/t/&lt;tileID&gt;/t_NN.png</c>.
     /// </summary>
+    private static async Task TaiTaiNguyenAsync(Phien phien, CauHinh c)
+    {
+        var thuMuc = Path.Combine(c.Ra, c.NhaPhatHanh, "Res");
+        Directory.CreateDirectory(thuMuc);
+
+        // Kho này gần như không đổi (phiên bản tài nguyên cả năm mới nhích), mà tải một lượt
+        // mất chục MB - có rồi thì thôi. Muốn lấy lại thì xoá thư mục Res đi.
+        var daCo = Directory.EnumerateFiles(thuMuc, "*", SearchOption.AllDirectories).Take(50).Count();
+        if (daCo >= 50)
+        {
+            Console.WriteLine($"Kho tài nguyên: đã có sẵn, bỏ qua ({Path.GetFullPath(thuMuc)})");
+            return;
+        }
+
+        var so = 0;
+        var byteTong = 0L;
+        var xong = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        void Nhan(string duong, byte[] du)
+        {
+            try
+            {
+                // Đường dẫn máy chủ khai kiểu "/t/5/t_01.png"; ghép vào thư mục ra và chặn mọi
+                // trò leo ngược ".." kẻo một cái tên xấu ghi đè lung tung ngoài thư mục.
+                var sach = duong.Replace('\\', '/').TrimStart('/');
+                if (sach.Contains("..")) return;
+
+                var dich = Path.Combine(thuMuc, sach.Replace('/', Path.DirectorySeparatorChar));
+                Directory.CreateDirectory(Path.GetDirectoryName(dich)!);
+                File.WriteAllBytes(dich, du);
+                Interlocked.Increment(ref so);
+                Interlocked.Add(ref byteTong, du.Length);
+            }
+            catch (Exception)
+            {
+                // một tệp hỏng không được kéo cả kho xuống theo
+            }
+        }
+
+        phien.Doc.NhanTepTaiNguyen += Nhan;
+        phien.Doc.XongTaiNguyen += () => xong.TrySetResult(true);
+
+        try
+        {
+            phien.Doc.XinTaiNguyen(1);
+            using var het = new CancellationTokenSource(c.ChoTaiNguyenMs);
+            await Task.WhenAny(xong.Task, Task.Delay(Timeout.Infinite, het.Token))
+                .ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // hết giờ thì lấy được bao nhiêu hay bấy nhiêu
+        }
+        finally
+        {
+            phien.Doc.NhanTepTaiNguyen -= Nhan;
+        }
+
+        Console.WriteLine($"Kho tài nguyên: {so} tệp, {byteTong / 1024} KB → {Path.GetFullPath(thuMuc)}");
+    }
+
     /// <summary>
     /// Xin bố cục ô của từng map. Nhẹ hơn hẳn ảnh với hình quái nên làm trước, và làm ngay
     /// trên phiên vừa đăng nhập chứ không cần chia tài khoản.
@@ -167,6 +218,21 @@ public static class Program
                           $"→ {Path.GetFullPath(thuMucMap)}");
     }
 
+    /// <summary>
+    /// Hỏi máy chủ từng ảnh icon rồi ghi ra <c>&lt;ra&gt;/&lt;nhà phát hành&gt;/Icons/</c>.
+    ///
+    /// <para>
+    /// Ảnh để chung một thư mục theo nhà phát hành chứ không theo từng máy chủ: id ảnh giống
+    /// nhau trên mọi máy chủ cùng nhà phát hành, tách ra chỉ tổ nhân đôi vài nghìn tệp.
+    /// </para>
+    ///
+    /// <para>
+    /// Máy chủ chỉ trả khoảng một trăm ảnh mỗi phiên rồi im, nên phải chia nhiều lượt, mỗi
+    /// lượt một lô nhỏ rồi ngắt ra đăng nhập lại. <b>Chỉ id nào máy chủ đã trả lời mới bị gạch
+    /// khỏi danh sách</b>; phần im lặng quay lại hàng chờ nguyên vẹn. Nhờ vậy không thể xảy
+    /// ra chuyện bỏ sót: vòng lặp chỉ dừng khi hỏi lại mà vẫn không ra thêm cái nào.
+    /// </para>
+    /// </summary>
     private static async Task TaiAnhAsync(Phien phienDau, CauHinh c)
     {
         var thuMucAnh = Path.Combine(c.Ra, c.NhaPhatHanh, "Icons");

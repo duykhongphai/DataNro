@@ -134,6 +134,9 @@ public sealed class BoDocGoi : IBoDoc
             case -67:
                 NhanAnh?.Invoke(msg);
                 break;
+            case -74:
+                NhanTaiNguyen(msg);
+                break;
             case 11:
                 NhanHinhQuai(msg);
                 break;
@@ -547,6 +550,66 @@ public sealed class BoDocGoi : IBoDoc
         var m = new Message((sbyte)11);
         m.writer().writeShort(mobTemplateId);
         Gui(m);
+    }
+
+    /// <summary>Một tệp trong kho tài nguyên vừa về: đường dẫn máy chủ khai và nội dung.</summary>
+    public event Action<string, byte[]> NhanTepTaiNguyen;
+
+    /// <summary>Máy chủ báo đã đẩy xong kho tài nguyên.</summary>
+    public event Action XongTaiNguyen;
+
+    /// <summary>
+    /// Xin kho tài nguyên của client (gói <c>-74</c>, tức <c>Service.getResource</c>).
+    ///
+    /// <para>
+    /// Đây là đường client tải ảnh nền map: <c>TileMap.getTile</c> đọc <c>/t/&lt;tileID&gt;/t_NN.png</c>
+    /// từ kho đã tải chứ không xin bằng gói ảnh <c>-67</c>. Nhánh 1 hỏi số tệp, nhánh 2 đẩy
+    /// từng tệp kèm <b>đường dẫn thật</b>, nhánh 3 báo hết. Ảnh về đúng mức phóng đã khai lúc
+    /// <c>setClientType</c>, nên khai 4 thì được bộ tile mức 4.
+    /// </para>
+    /// </summary>
+    public void XinTaiNguyen(sbyte nhanh)
+    {
+        var m = new Message((sbyte)-74);
+        m.writer().writeByte(nhanh);
+        Gui(m);
+    }
+
+    private void NhanTaiNguyen(Message msg)
+    {
+        try
+        {
+            var r = msg.reader();
+            var nhanh = r.readByte();
+            switch (nhanh)
+            {
+                case 0:
+                    log?.Invoke($"Kho tài nguyên: phiên bản máy chủ {r.readInt()}");
+                    XinTaiNguyen(1);
+                    break;
+                case 1:
+                    log?.Invoke($"Kho tài nguyên: {r.readShort()} tệp, bắt đầu tải.");
+                    XinTaiNguyen(2);
+                    break;
+                case 2:
+                {
+                    var duong = r.readUTF();
+                    var dai = r.readInt();
+                    var du = new byte[dai];
+                    for (var i = 0; i < dai; i++) du[i] = unchecked((byte)r.readByte());
+                    NhanTepTaiNguyen?.Invoke(duong, du);
+                    break;
+                }
+                case 3:
+                    log?.Invoke($"Kho tài nguyên: xong, phiên bản {r.readInt()}");
+                    XongTaiNguyen?.Invoke();
+                    break;
+            }
+        }
+        catch (Exception e)
+        {
+            log?.Invoke("Đọc gói tài nguyên hỏng: " + e.Message);
+        }
     }
 
     /// <summary>Xin một ảnh theo id. Máy chủ im lặng với id nó không có.</summary>

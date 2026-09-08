@@ -70,6 +70,12 @@ public class CauHinh
     /// <summary>Tải luôn hình sprite của từng mẫu quái.</summary>
     public bool TaiQuai { get; set; } = true;
 
+    /// <summary>Xin cả kho tài nguyên của client (gói -74) - trong đó có ảnh nền map.</summary>
+    public bool TaiTaiNguyen { get; set; }
+
+    /// <summary>Hết giờ cho việc tải kho tài nguyên.</summary>
+    public int ChoTaiNguyenMs { get; set; } = 600000;
+
     /// <summary>Xin luôn bố cục ô của từng map (gói -28 nhánh 10).</summary>
     public bool TaiMap { get; set; } = true;
 
@@ -230,6 +236,7 @@ public class CauHinh
                 case "--khong-anh": c.TaiAnh = false; break;
                 case "--khong-quai": c.TaiQuai = false; break;
                 case "--khong-map": c.TaiMap = false; break;
+                case "--tai-res": c.TaiTaiNguyen = true; break;
                 case "--nhip-map": if (int.TryParse(KeTiep(), out var nm)) c.NhipMapMs = nm; break;
                 case "--lo-quai": if (int.TryParse(KeTiep(), out var lq)) c.SoQuaiMoiLuot = lq; break;
                 case "--nhip-quai": if (int.TryParse(KeTiep(), out var nq)) c.NhipQuaiMs = nq; break;
