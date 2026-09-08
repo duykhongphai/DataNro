@@ -216,11 +216,10 @@ main { max-width: 1560px; margin: 0 auto; padding: 18px 20px 80px; }
   border-radius: 12px; background: var(--chim); border: 1px solid var(--vien-mo);
   overflow: hidden; position: relative;
 }
-.npc-khung {
-  position: absolute; left: 50%; top: 50%;
-  transform-origin: center;
+.npc-hinh img, .quai-hinh img {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  max-width: 96px; max-height: 96px; object-fit: contain;
 }
-.npc-khung img { position: absolute; image-rendering: auto; }
 
 /* Hình quái: mỗi mảnh là một ô cắt trên tấm sprite chung, nên dùng background-position thay
    vì cắt bằng thẻ img. Khung ngoài thu nhỏ cả cụm cho vừa ô. */
@@ -229,13 +228,7 @@ main { max-width: 1560px; margin: 0 auto; padding: 18px 20px 80px; }
   border-radius: 12px; background: var(--chim); border: 1px solid var(--vien-mo);
   overflow: hidden; position: relative;
 }
-.quai-khung { position: absolute; left: 50%; top: 50%; transform-origin: center; }
-.quai-khung span {
-  position: absolute;
-  background-image: var(--tam);
-  background-repeat: no-repeat;
-  image-rendering: pixelated;
-}
+
 
 .bo-anh { display: flex; gap: 7px; margin-top: 11px; }
 .bo-anh .o-anh { width: 72px; height: 72px; }
@@ -365,6 +358,18 @@ footer {
   max-width: 1560px; margin: 0 auto; padding: 0 20px 48px;
   color: var(--chu-mo); font-size: 13px;
 }
+/* Thanh phân trang: 2085 vật phẩm mà đổ hết một lượt thì trình duyệt phải dựng ngần ấy thẻ
+   và xin ngần ấy ảnh cùng lúc - cuộn giật, quạt máy kêu. Cắt thành trang thì mỗi lần chỉ vài
+   chục thẻ. */
+.phan-trang {
+  max-width: 1560px; margin: 22px auto 0; padding: 0 20px;
+  display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;
+}
+.phan-trang .nut[aria-current="true"] {
+  background: var(--nhan); border-color: var(--nhan); color: var(--nhan-chu);
+}
+.phan-trang .vi-tri { color: var(--chu-mo); font-size: 13px; margin: 0 6px; }
+
 .tai-ve {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   margin-bottom: 16px; padding: 14px 16px;
@@ -433,11 +438,15 @@ footer {
       <option value="id">Sắp theo id</option>
       <option value="ten">Sắp theo tên</option>
     </select>
+    <a class="nut" id="link-json" href="#" target="_blank" rel="noopener">JSON gốc</a>
     <span class="dem" id="dem"></span>
   </div>
 </header>
 
-<main><div class="dan" id="noi-dung"></div></main>
+<main>
+  <div class="dan" id="noi-dung"></div>
+  <div class="phan-trang" id="phan-trang" hidden></div>
+</main>
 
 <footer>
   <div class="tai-ve">
@@ -449,7 +458,6 @@ footer {
     <span class="tien-do" id="tien-do"></span>
   </div>
   Dữ liệu lấy thẳng từ máy chủ game, cập nhật tự động mỗi ngày ·
-  <a id="link-json" href="#">JSON gốc</a> ·
   <a href="https://github.com/duykhongphai/DataNro">Mã nguồn</a>
 </footer>
 
@@ -521,6 +529,11 @@ const T = { chiMuc: MAC_DINH, nph: "TeaMobi", sv: "Server1", muc: "vatpham", tim
 const kho = new Map();
 let dangHien = [];   // danh sách đang hiển thị, để ngăn chi tiết tra lại theo chỉ số
 let phuHienTai = [];  // bảng part / bảng quái của mục đang xem, ngăn chi tiết vẽ hình lại
+let toanBo = [];      // toàn bộ mục sau khi lọc, chưa cắt trang
+let trang = 0;        // trang đang xem, đếm từ 0
+
+/** Mỗi trang bao nhiêu mục. Thẻ có ảnh thì nặng hơn hẳn dòng chữ nên để ít hơn. */
+const MOI_TRANG = { vatpham: 60, quai: 60, npc: 60, kinang: 12, option: 300, map: 300 };
 const $ = (id) => document.getElementById(id);
 
 // ══════════ tiện ích ══════════
@@ -557,126 +570,19 @@ function veAnh(id) {
 }
 
 /**
- * Vài NPC client không ghép từ part mà gọi thẳng một ảnh theo số, id nằm cứng trong mã
- * (Npc.paint). Ghép part cho mấy con này ra hình vô nghĩa - rương đồ thành hai mảnh rời.
- */
-const NPC_ANH_RIENG = { 3: 265, 6: 545 };
-
-/**
- * NPC client không vẽ từ dữ liệu tĩnh: cây đậu thần có hoạt ảnh riêng, còn quả trứng với dưa
- * hấu thì máy chủ gửi kèm mảng ảnh lúc chúng hiện ra trong map. Ba id part của chúng đều là
- * -1 nên có cố cũng không ghép được gì.
- */
-const NPC_KHONG_VE = new Set([4, 50, 51]);
-
-/**
- * Ghép hình NPC từ ba mảnh, đúng cách client vẽ (Npc.cs:290):
+ * Hình NPC và hình quái đều đã được ghép sẵn lúc chạy workflow, mỗi con một tấm PNG.
  *
- *   vẽ đầu, rồi chân, rồi thân — thân sau cùng nên đè lên trên
- *   x = cx + tuThe[k][1] + khung.dx
- *   y = cy - tuThe[k][2] + khung.dy      (chú ý dấu TRỪ ở dy của tư thế)
- *
- * Thứ tự mục trong bảng tư thế là đầu / chân / thân, còn ba id của NPC là đầu / thân / chân -
- * lệch nhau nên rất dễ ghép nhầm.
- *
- * Khung nhìn tính theo hộp bao thật của ba mảnh chứ không phải một ô cố định: NPC to như Quốc
- * Vương hay Rồng Thiêng cao gấp mấy lần người thường, ô cố định cắt cụt còn mỗi mảng màu.
+ * <p>Trước đây trang tự ghép: mỗi NPC là ba ảnh rời chồng lên nhau, mỗi con quái là cả một
+ * tấm sprite (có tấm 940x628) cắt ra mấy mảnh - một trang NPC ngốn hơn hai trăm sáu mươi lượt
+ * tải, còn quái thì kéo về nguyên tấm sprite chỉ để lấy một khung. Giờ mỗi con đúng một ảnh
+ * nhỏ. Bảng part với bảng khung vẫn còn trong kho JSON cho ai muốn tự dựng.</p>
  */
-function veHinhNpc(x, parts, co) {
-  const rieng = NPC_ANH_RIENG[x.npcTemplateId];
-  if (rieng !== undefined) return oAnhNpc([{ id: rieng, x: 0, y: 0 }], co);
-  if (NPC_KHONG_VE.has(x.npcTemplateId)) return `<span class="npc-hinh"></span>`;
+const veHinhGhep = (thuMuc, id, lop) =>
+  `<span class="${lop}"><img loading="lazy" decoding="async" alt=""
+    src="${T.nph}/${thuMuc}/${id}.png" onerror="this.style.display='none'"></span>`;
 
-  const t = TU_THE[TU_THE_DUNG];
-  const manh = [
-    { part: parts[x.headId], tt: t[0] },
-    { part: parts[x.legId], tt: t[1] },
-    { part: parts[x.bodyId], tt: t[2] }
-  ];
-
-  const lop = [];
-  for (const { part, tt } of manh) {
-    const k = part?.pi?.[tt[0]];
-    if (!k || k.id < 0) continue;
-    lop.push({ id: k.id, x: tt[1] + k.dx, y: -tt[2] + k.dy });
-  }
-
-  return oAnhNpc(lop, co);
-}
-
-/**
- * Đặt mấy mảnh ảnh vào một ô vuông, co lại cho vừa.
- *
- * Toạ độ mảnh là đơn vị game, kích thước ảnh thì tra bảng <c>Icons/Sizes.json</c> - phải biết
- * trước mới tính được hộp bao, chứ đợi ảnh tải xong rồi mới bố trí thì cả lưới nhấp nháy.
- * Chưa có bảng thì lùi về ô cố định cỡ một nhân vật thường.
- */
-function oAnhNpc(lop, co) {
-  if (!lop.length) return `<span class="npc-hinh"></span>`;
-
-  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-  for (const m of lop) {
-    const kt = co?.[m.id];
-    const w = kt ? kt[0] / PHONG : KHUNG_NPC.w;
-    const h = kt ? kt[1] / PHONG : KHUNG_NPC.h;
-    if (x0 > m.x) x0 = m.x;
-    if (y0 > m.y) y0 = m.y;
-    if (x1 < m.x + w) x1 = m.x + w;
-    if (y1 < m.y + h) y1 = m.y + h;
-  }
-
-  const hinh = lop.map((m) =>
-    `<img loading="lazy" decoding="async" alt="" style="left:${(m.x - x0) * PHONG}px;top:${(m.y - y0) * PHONG}px"
-      src="${T.nph}/Icons/${Math.floor(m.id / 1000)}/${m.id}.png"
-      onerror="this.style.display='none'">`).join("");
-
-  const rong = (x1 - x0) * PHONG, cao = (y1 - y0) * PHONG;
-  const ti = Math.min(1, 92 / Math.max(rong, cao, 1));
-  return `<span class="npc-hinh"><span class="npc-khung"
-    style="width:${rong}px;height:${cao}px;transform:translate(-50%,-50%) scale(${ti.toFixed(3)})">${hinh}</span></span>`;
-}
-
-/**
- * Ghép hình quái từ tấm sprite riêng của nó, đúng cách client vẽ
- * (<c>EffectData.paintFrame</c>): mỗi mảnh là một ô cắt trên tấm, đặt lệch đi (dx, dy).
- *
- * Mọi con số trong bảng khung đều là đơn vị game - client nhân cả toạ độ đích lẫn ô cắt với
- * mức phóng (mGraphics.drawRegion), mà ảnh ta xin ở mức 4, nên nhân hết với PHONG.
- */
-function veHinhQuai(id, bang) {
-  const q = bang.get(id);
-  const k = q?.frames?.[0];
-  if (!k || !k.length) return `<span class="o-anh trong"></span>`;
-
-  const o = (i) => q.rects.find((r) => r.id === k[i].o);
-  const x0 = Math.min(...k.map((_, i) => k[i].dx));
-  const y0 = Math.min(...k.map((_, i) => k[i].dy));
-  const x1 = Math.max(...k.map((_, i) => k[i].dx + (o(i)?.w ?? 0)));
-  const y1 = Math.max(...k.map((_, i) => k[i].dy + (o(i)?.h ?? 0)));
-
-  // Toạ độ trong bảng ô là đơn vị game, nên hình luôn dựng ở mức phóng PHONG. Tấm sprite thì
-  // không phải con nào cũng ở mức đó - vài con máy chủ gửi ảnh gốc chưa phóng (scale 1) - nên
-  // phóng tấm ảnh cho khớp trước rồi mới cắt. Phải ghi hẳn ra pixel: background-size tính theo
-  // phần trăm là so với cái ô chứa chứ không phải kích thước gốc của ảnh.
-  const ti = PHONG / (q.scale || PHONG);
-  const nen = q.sheetW && ti !== 1
-    ? `background-size:${q.sheetW * ti}px ${q.sheetH * ti}px;`
-    : "";
-
-  const manh = k.map((m, i) => {
-    const r = o(i);
-    if (!r) return "";
-    return `<span style="left:${(m.dx - x0) * PHONG}px;top:${(m.dy - y0) * PHONG}px;
-      width:${r.w * PHONG}px;height:${r.h * PHONG}px;${nen}
-      background-position:${-r.x * PHONG}px ${-r.y * PHONG}px"></span>`;
-  }).join("");
-
-  const rong = (x1 - x0) * PHONG, cao = (y1 - y0) * PHONG;
-  const co = Math.min(1, 84 / Math.max(rong, cao, 1));
-  return `<span class="quai-hinh"><span class="quai-khung"
-    style="width:${rong}px;height:${cao}px;transform:translate(-50%,-50%) scale(${co.toFixed(3)});
-    --tam:url('${T.nph}/Mobs/${id}.png')">${manh}</span></span>`;
-}
+const veHinhNpc = (x) => veHinhGhep("NpcHinh", x.npcTemplateId, "npc-hinh");
+const veHinhQuai = (id) => veHinhGhep("MobHinh", id, "quai-hinh");
 
 /** Chip bấm là chép. Đây là thứ dùng nhiều nhất của trang này nên để nó thật rõ. */
 const chep = (giaTri, nhan) =>
@@ -826,9 +732,9 @@ const VE = {
     </div>
   </article>`).join(""),
 
-  quai: (ds, bang) => ds.map((x, i) => `<article class="the" data-i="${i}">
+  quai: (ds) => ds.map((x, i) => `<article class="the" data-i="${i}">
     <div class="the-tren">
-      ${bang.size ? veHinhQuai(x.mobTemplateId, bang) : ""}
+      ${veHinhQuai(x.mobTemplateId)}
       <div class="the-chu">
         <div class="the-ten">${thoat(x.name)}</div>
         <div class="the-chip">
@@ -843,19 +749,15 @@ const VE = {
     <div class="the-duoi">${chepNhan("id ", x.mobTemplateId)}</div>
   </article>`).join(""),
 
-  npc: (ds, phu) => ds.map((x, i) => `<article class="the" data-i="${i}">
+  npc: (ds) => ds.map((x, i) => `<article class="the" data-i="${i}">
     <div class="the-tren">
-      ${phu.parts.length ? veHinhNpc(x, phu.parts, phu.co) : ""}
+      ${veHinhNpc(x)}
       <div class="the-chu">
         <div class="the-ten">${thoat(x.name)}</div>
-        ${phu.parts.length ? "" : `<div class="bo-anh">${veAnh(x.headId)}${veAnh(x.bodyId)}${veAnh(x.legId)}</div>`}
         <div class="the-chip">${(x.menu || []).flat().map((m) => chep(m)).join("")}</div>
       </div>
     </div>
-    <div class="the-duoi">
-      ${chepNhan("id ", x.npcTemplateId)}${chepNhan("đầu ", x.headId)}
-      ${chepNhan("thân ", x.bodyId)}${chepNhan("chân ", x.legId)}
-    </div>
+    <div class="the-duoi">${chepNhan("id ", x.npcTemplateId)}</div>
   </article>`).join(""),
 
   option: (ds) => `<div class="o-dau"><span class="c-id">Id</span>
@@ -934,7 +836,7 @@ const CHI_TIET = {
       dongTT("Xếp chồng", x.isUpToUp ? "có" : "không", false)
   }),
   quai: (x) => ({
-    hinh: phuHienTai.size ? veHinhQuai(x.mobTemplateId, phuHienTai) : "",
+    hinh: veHinhQuai(x.mobTemplateId),
     ten: x.name, phu: `Quái · id ${x.mobTemplateId}`,
     dong: dongTT("Id quái", x.mobTemplateId) +
       dongTT("Máu", x.hp.toLocaleString("vi-VN"), false) + dongTT("Loại", x.type, false) +
@@ -944,7 +846,7 @@ const CHI_TIET = {
   npc: (x) => ({
     // headId không phải id ảnh mà là CHỈ SỐ vào bảng part - đưa thẳng cho veAnh thì ra một
     // tấm ảnh chẳng liên quan. Ghép lại đúng như ngoài thẻ.
-    hinh: veHinhNpc(x, phuHienTai.parts ?? [], phuHienTai.co),
+    hinh: veHinhNpc(x),
     ten: x.name, phu: `NPC · id ${x.npcTemplateId}`,
     dong: dongTT("Id NPC", x.npcTemplateId) + dongTT("Part đầu", x.headId) +
       dongTT("Part thân", x.bodyId) + dongTT("Part chân", x.legId) +
@@ -1043,6 +945,7 @@ let phienVe = 0;
 async function ve() {
   const phien = ++phienVe;
   const noi = $("noi-dung");
+  $("phan-trang").hidden = true;
   $("link-json").href = `${T.nph}/${T.sv}/${MUC[T.muc].tep}`;
   noi.className = T.muc === "map" || T.muc === "option" ? "luoi" : "dan";
 
@@ -1072,21 +975,66 @@ async function ve() {
     return;
   }
 
-  // Chỉ mục NPC mới cần bảng part; tải trước khi vẽ để khỏi nhấp nháy.
-  // Mỗi mục cần một bảng phụ khác nhau: NPC cần bảng part, quái cần bảng khung.
-  const phu = T.muc === "npc" ? { parts: await layParts(), co: await layKichThuoc() }
-    : T.muc === "quai" ? await layQuai()
-    : T.muc === "map" ? await layBoCucMap()
-    : [];
+  // NPC với quái dùng ảnh ghép sẵn nên không phải tải bảng nào; chỉ mục map còn cần bố cục ô.
+  const phu = T.muc === "map" ? await layBoCucMap() : [];
   phuHienTai = phu;
   if (phien !== phienVe) return;
 
-  dangHien = loc(ds);
-  noi.innerHTML = dangHien.length ? VE[T.muc](dangHien, phu)
-    : `<p class="trong-rong">Không có mục nào khớp “${thoat(T.tim)}”.</p>`;
-  $("dem").innerHTML = dangHien.length === ds.length
+  toanBo = loc(ds);
+  trang = 0;
+  veTrang();
+
+  $("dem").innerHTML = toanBo.length === ds.length
     ? `<b>${ds.length}</b> mục`
-    : `<b>${dangHien.length}</b>/${ds.length} mục`;
+    : `<b>${toanBo.length}</b>/${ds.length} mục`;
+}
+
+/**
+ * Đổ một trang ra màn hình.
+ *
+ * <p><c>dangHien</c> chỉ chứa phần đang hiện, vì ngăn chi tiết tra theo chỉ số trong đó -
+ * cắt trang mà quên đồng bộ chỗ này là bấm vào thẻ lại ra mục của trang khác.</p>
+ */
+function veTrang() {
+  const noi = $("noi-dung");
+  const moi = MOI_TRANG[T.muc] ?? 60;
+  const soTrang = Math.max(1, Math.ceil(toanBo.length / moi));
+  if (trang >= soTrang) trang = soTrang - 1;
+
+  dangHien = toanBo.slice(trang * moi, (trang + 1) * moi);
+  noi.innerHTML = dangHien.length ? VE[T.muc](dangHien, phuHienTai)
+    : `<p class="trong-rong">Không có mục nào khớp “${thoat(T.tim)}”.</p>`;
+
+  veThanhTrang(soTrang);
+}
+
+function veThanhTrang(soTrang) {
+  const thanh = $("phan-trang");
+  if (soTrang <= 1) {
+    thanh.hidden = true;
+    thanh.innerHTML = "";
+    return;
+  }
+
+  // Chỉ bày vài số quanh trang hiện tại: 35 trang mà in hết thì thanh dài hơn cả danh sách.
+  const quanh = [];
+  for (let i = Math.max(0, trang - 2); i <= Math.min(soTrang - 1, trang + 2); i++) quanh.push(i);
+  if (quanh[0] > 0) quanh.unshift(0);
+  if (quanh[quanh.length - 1] < soTrang - 1) quanh.push(soTrang - 1);
+
+  thanh.hidden = false;
+  thanh.innerHTML =
+    `<button class="nut" data-trang="${trang - 1}" ${trang === 0 ? "disabled" : ""}>← Trước</button>` +
+    quanh.map((i) => `<button class="nut" data-trang="${i}"
+      ${i === trang ? 'aria-current="true"' : ""}>${i + 1}</button>`).join("") +
+    `<button class="nut" data-trang="${trang + 1}" ${trang === soTrang - 1 ? "disabled" : ""}>Sau →</button>` +
+    `<span class="vi-tri">trang ${trang + 1}/${soTrang}</span>`;
+
+  thanh.querySelectorAll("[data-trang]").forEach((n) => n.addEventListener("click", () => {
+    trang = Number(n.dataset.trang);
+    veTrang();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }));
 }
 
 async function veMocCapNhat() {
@@ -1374,12 +1322,22 @@ async function taiVe(loai) {
         ten: `Icons/${Math.floor(id / 1000)}/${id}.png`,
         duong: `${T.nph}/Icons/${Math.floor(id / 1000)}/${id}.png`
       }));
+
+      // Kèm luôn hình NPC đã ghép sẵn - cùng một kho ảnh, tách ra thành hai gói chỉ tổ rườm.
+      const npc = await docJson(`${T.nph}/${T.sv}/NpcTemplates.json`).catch(() => []);
+      for (const x of npc)
+        ds.push({
+          ten: `NpcHinh/${x.npcTemplateId}.png`,
+          duong: `${T.nph}/NpcHinh/${x.npcTemplateId}.png`
+        });
     } else if (loai === "quai") {
       const bang = await layQuai();
       ten = `${T.nph}-mobs.zip`;
       ds = [{ ten: "Mobs/MobFrames.json", duong: `${T.nph}/Mobs/MobFrames.json` }];
-      for (const id of bang.keys())
+      for (const id of bang.keys()) {
         ds.push({ ten: `Mobs/${id}.png`, duong: `${T.nph}/Mobs/${id}.png` });
+        ds.push({ ten: `MobHinh/${id}.png`, duong: `${T.nph}/MobHinh/${id}.png` });
+      }
     } else if (loai === "map") {
       ten = `${T.nph}-maps.zip`;
       ds = [

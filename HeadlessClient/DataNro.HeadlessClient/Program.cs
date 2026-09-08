@@ -91,7 +91,21 @@ public static class Program
 
         // Bảng kích thước ảnh: quét cả thư mục chứ không chỉ phần vừa tải, và chạy cả khi lượt
         // này bỏ ảnh - lần chạy trước có thể đã thêm ảnh mà chưa kịp ghi bảng.
-        BoAnh.GhiKichThuoc(Path.Combine(c.Ra, c.NhaPhatHanh, "Icons"));
+        var thuMucNph = Path.Combine(c.Ra, c.NhaPhatHanh);
+        BoAnh.GhiKichThuoc(Path.Combine(thuMucNph, "Icons"));
+
+        // Ghép sẵn hình NPC với hình quái: để trang tự ghép thì một trang NPC phải tải hơn hai
+        // trăm sáu mươi ảnh rời, còn mỗi con quái kéo về nguyên tấm sprite chỉ để lấy một khung.
+        try
+        {
+            var soNpc = BoGhepHinh.GhepNpc(phien.Data, thuMucNph);
+            var soQuai = BoGhepHinh.GhepQuai(thuMucNph);
+            Console.WriteLine($"Ghép sẵn hình: {soNpc} NPC, {soQuai} quái");
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("Ghép hình hỏng: " + e.Message);
+        }
 
         phien.Ngat();
         return 0;
