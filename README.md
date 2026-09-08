@@ -177,27 +177,35 @@ tấm ấy ở đâu:
 
 ```jsonc
 { "mobTemplateId": 0, "width": 24, "height": 32,
-  "rects":  [{ "id": 0, "x": 0, "y": 0, "w": 24, "h": 32 }],   // ô cắt trên tấm png
+  "scale": 4, "sheetW": 204, "sheetH": 160,                     // tấm png: cỡ thật + mức phóng
+  "rects":  [{ "id": 0, "x": 0, "y": 0, "w": 24, "h": 32 }],   // ô cắt, tính bằng đơn vị game
   "frames": [[{ "dx": 0, "dy": 0, "o": 0 }]],                   // mỗi khung là mấy mảnh
   "anim":   [0, 1, 2] }                                         // chuỗi hoạt ảnh
 ```
 
-**Mọi con số toạ độ đều là đơn vị game.** Client nhân cả toạ độ đích lẫn ô cắt với mức phóng
-(`mGraphics.drawRegion`), mà ảnh ở đây xin ở mức 4 — nên nhân tất cả với 4 rồi mới vẽ. Quên
-chỗ này thì hình ra đúng hình dạng nhưng các mảnh rời nhau ra.
+**Mọi con số toạ độ đều là đơn vị game**, kể cả bảng ô — muốn cắt trên tấm png thì nhân với
+`scale`. Client nhân cả toạ độ đích lẫn ô cắt với mức phóng (`mGraphics.drawRegion`), ta xin
+ảnh ở mức 4 nên `scale` gần như luôn là 4. Quên chỗ này thì hình ra đúng hình dạng nhưng các
+mảnh rời nhau ra.
 
 Ba chỗ lệch chuẩn, đều nằm ở mấy con boss:
 
 - **Đuôi hoạt ảnh có con đếm bằng một byte** thay vì `short` (Godzilla, Kong). Client đọc bằng
   `readShort` rồi bọc cả hàm trong `catch` rỗng, nên nó lặng lẽ **bỏ luôn hoạt ảnh** của những
   con này. Ở đây thì thử cách đọc nào ăn khớp trọn vẹn số byte còn lại.
+- **`"scale": 1`** — vài con (Hirudegarn `70`, Vua Bạch Tuộc `71`) máy chủ gửi thẳng **ảnh gốc
+  chưa phóng**, không có trường nào báo trước. Tự đoán bằng cách so kích thước tấm png với vùng
+  mà bảng ô phủ tới, nên `sheetW`/`sheetH` có sẵn trong tệp để bên vẽ khỏi phải chờ ảnh tải
+  xong mới biết.
 - **`"autoSize": true`** nghĩa là máy chủ gửi tệp nguồn dạng chữ (`==== SMALLIMAGES ====` /
   `FRAMES` / `SEQUENCE`) chứ không phải gói nhị phân — Hirudegarn là một ví dụ. Bảng ô trong đó
   **chỉ có toạ độ góc**, rộng/cao là do công cụ này tự dò từ vùng đục của tấm PNG nên có thể
   lệch vài điểm ảnh. Client gặp định dạng này thì tràn mảng ngay từ byte đầu và không vẽ được
   gì cả.
-- Tấm sprite của những con `autoSize` là **ảnh gốc chưa phóng**: một đơn vị game bằng đúng một
-  điểm ảnh, **không nhân 4**.
+
+Bảng ô thi thoảng có **ô rác thò hẳn ra ngoài tấm ảnh** (con `71` có ô ở `y = 255` trong khi
+tấm chỉ cao 124). Client cũng gặp, và nó bọc `drawRegion` trong `catch` rỗng nên chỉ là không
+vẽ ra gì.
 
 Bốn mẫu quái (`28`, `29`, `30`, `85`) thì máy chủ không trả lời gói xin hình, nên không có
 tấm sprite nào cả.

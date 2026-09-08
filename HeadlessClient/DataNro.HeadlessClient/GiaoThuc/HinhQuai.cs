@@ -46,6 +46,14 @@ public class HinhQuai
     public int rong, cao;
 
     /// <summary>
+    /// Một đơn vị game bằng mấy điểm ảnh trên tấm sprite. Xem <see cref="TinhTiLe"/>.
+    /// </summary>
+    public int tiLe = 4;
+
+    /// <summary>Kích thước tấm sprite tính bằng điểm ảnh thật.</summary>
+    public int rongAnh, caoAnh;
+
+    /// <summary>
     /// Bảng ô do <b>tự dò</b> chứ không phải máy chủ gửi (bố cục chữ chỉ có toạ độ góc trên
     /// trái). Kèm theo một điều quan trọng cho bên vẽ: tấm sprite của mấy con này là
     /// <b>ảnh gốc chưa phóng</b>, tức một đơn vị game bằng đúng một điểm ảnh, khác hẳn tấm
@@ -68,6 +76,40 @@ public class HinhQuai
 
         if (LaChu(du)) DocChu(du);
         else DocNhiPhan(du, kieuDoc);
+
+        if (!AnhPng.KichThuoc(anh, out rongAnh, out caoAnh)) return;
+        tiLe = TinhTiLe(rongAnh, caoAnh, oAnh);
+    }
+
+    /// <summary>
+    /// Đoán xem tấm sprite đang ở mức phóng nào.
+    ///
+    /// <para>
+    /// Mọi toạ độ trong bảng ô đều là <b>đơn vị game</b>, còn tấm ảnh thì máy chủ trả về ở mức
+    /// phóng đã khai lúc <c>setClientType</c> - ta khai 4 nên gần như con nào cũng gấp bốn. Gần
+    /// như thôi: vài con (Hirudegarn, Vua Bạch Tuộc) máy chủ gửi thẳng ảnh gốc chưa phóng, mà
+    /// không có trường nào báo, nên phải tự so tấm ảnh với vùng mà bảng ô phủ tới.
+    /// </para>
+    ///
+    /// <para>
+    /// Lấy tỉ lệ <b>lớn hơn</b> giữa hai chiều chứ không lấy nhỏ hơn: bảng ô thi thoảng có một
+    /// ô rác thò hẳn ra ngoài tấm ảnh (con 71 có ô ở y=255 trong khi tấm cao 124), ô đó thổi
+    /// phồng một chiều và dìm tỉ lệ chiều ấy xuống, còn chiều kia vẫn đúng.
+    /// </para>
+    /// </summary>
+    public static int TinhTiLe(int rongAnh, int caoAnh, OAnh[] o)
+    {
+        if (o == null || o.Length == 0) return 4;
+
+        int mx = 1, my = 1;
+        foreach (var x in o)
+        {
+            if (mx < x.x0 + x.w) mx = x.x0 + x.w;
+            if (my < x.y0 + x.h) my = x.y0 + x.h;
+        }
+
+        var ti = Math.Max(rongAnh / (double)mx, caoAnh / (double)my);
+        return ti >= 3 ? 4 : ti >= 1.5 ? 2 : 1;
     }
 
     /// <summary>Ô cắt theo id. Client tra theo <c>ID</c> chứ không theo vị trí trong mảng.</summary>

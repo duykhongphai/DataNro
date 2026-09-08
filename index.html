@@ -218,6 +218,7 @@ main { max-width: 1560px; margin: 0 auto; padding: 18px 20px 80px; }
   position: absolute;
   background-image: var(--tam);
   background-repeat: no-repeat;
+  image-rendering: pixelated;
 }
 
 .bo-anh { display: flex; gap: 7px; margin-top: 11px; }
@@ -562,19 +563,24 @@ function veHinhQuai(id, bang) {
   const x1 = Math.max(...k.map((_, i) => k[i].dx + (o(i)?.w ?? 0)));
   const y1 = Math.max(...k.map((_, i) => k[i].dy + (o(i)?.h ?? 0)));
 
-  // Mấy con boss máy chủ gửi kèm bảng ô dạng chữ (autoSize) thì tấm sprite là ảnh gốc chưa
-  // phóng: một đơn vị game bằng đúng một điểm ảnh, không nhân bốn như tấm thường.
-  const P = q.autoSize ? 1 : PHONG;
+  // Toạ độ trong bảng ô là đơn vị game, nên hình luôn dựng ở mức phóng PHONG. Tấm sprite thì
+  // không phải con nào cũng ở mức đó - vài con máy chủ gửi ảnh gốc chưa phóng (scale 1) - nên
+  // phóng tấm ảnh cho khớp trước rồi mới cắt. Phải ghi hẳn ra pixel: background-size tính theo
+  // phần trăm là so với cái ô chứa chứ không phải kích thước gốc của ảnh.
+  const ti = PHONG / (q.scale || PHONG);
+  const nen = q.sheetW && ti !== 1
+    ? `background-size:${q.sheetW * ti}px ${q.sheetH * ti}px;`
+    : "";
 
   const manh = k.map((m, i) => {
     const r = o(i);
     if (!r) return "";
-    return `<span style="left:${(m.dx - x0) * P}px;top:${(m.dy - y0) * P}px;
-      width:${r.w * P}px;height:${r.h * P}px;
-      background-position:${-r.x * P}px ${-r.y * P}px"></span>`;
+    return `<span style="left:${(m.dx - x0) * PHONG}px;top:${(m.dy - y0) * PHONG}px;
+      width:${r.w * PHONG}px;height:${r.h * PHONG}px;${nen}
+      background-position:${-r.x * PHONG}px ${-r.y * PHONG}px"></span>`;
   }).join("");
 
-  const rong = (x1 - x0) * P, cao = (y1 - y0) * P;
+  const rong = (x1 - x0) * PHONG, cao = (y1 - y0) * PHONG;
   const co = Math.min(1, 84 / Math.max(rong, cao, 1));
   return `<span class="quai-hinh"><span class="quai-khung"
     style="width:${rong}px;height:${cao}px;transform:translate(-50%,-50%) scale(${co.toFixed(3)});

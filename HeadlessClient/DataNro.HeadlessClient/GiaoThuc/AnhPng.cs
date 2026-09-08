@@ -15,6 +15,18 @@ namespace DataNro.GiaoThuc;
 /// </summary>
 public static class AnhPng
 {
+    /// <summary>Rộng/cao ghi trong khối IHDR. Rẻ hơn hẳn <see cref="DocDuc"/> vì khỏi giải nén.</summary>
+    public static bool KichThuoc(byte[] png, out int rong, out int cao)
+    {
+        rong = cao = 0;
+        if (png == null || png.Length < 33 || png[0] != 0x89 || png[1] != 'P') return false;
+        if (System.Text.Encoding.ASCII.GetString(png, 12, 4) != "IHDR") return false;
+
+        rong = DocInt(png, 16);
+        cao = DocInt(png, 20);
+        return rong > 0 && cao > 0;
+    }
+
     /// <summary>
     /// Trả về mặt nạ điểm ảnh đục (<c>true</c> là không trong suốt), hoặc <c>null</c> nếu tấm
     /// ảnh dùng kiểu mã hoá không đỡ (ảnh xen kẽ, độ sâu khác 8 bit).

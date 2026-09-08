@@ -42,8 +42,22 @@ public class QuaiRa
     [JsonPropertyName("anim")] public short[] Anim { get; set; }
 
     /// <summary>
-    /// Máy chủ không gửi rộng/cao của ô cắt - trang web phải tự dò theo vùng đục của tấm PNG.
-    /// Chỉ vài con boss dính, nên bỏ hẳn trường này khi không cần cho tệp đỡ phình.
+    /// Một đơn vị game bằng mấy điểm ảnh trên tấm sprite - gần như luôn là 4, trừ vài con máy
+    /// chủ gửi ảnh gốc chưa phóng. Bên vẽ phải phóng tấm ảnh lên cho khớp trước khi cắt.
+    /// </summary>
+    [JsonPropertyName("scale")] public int Scale { get; set; } = 4;
+
+    /// <summary>
+    /// Kích thước tấm sprite, tính bằng điểm ảnh thật. Bên vẽ cần con số này để phóng tấm ảnh
+    /// lên đúng mức trước khi cắt - CSS không có cách nào hỏi kích thước gốc của ảnh nền.
+    /// </summary>
+    [JsonPropertyName("sheetW")] public int SheetW { get; set; }
+
+    [JsonPropertyName("sheetH")] public int SheetH { get; set; }
+
+    /// <summary>
+    /// Rộng/cao của ô cắt là <b>tự dò</b> từ tấm PNG chứ không phải máy chủ gửi, nên có thể
+    /// lệch vài điểm ảnh. Chỉ vài con boss dính, nên bỏ hẳn trường này khi không cần.
     /// </summary>
     [JsonPropertyName("autoSize")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
@@ -193,6 +207,43 @@ public sealed class BoQuai
         }
     }
 
+    /// <summary>
+    /// Tính lại kích thước và tỉ lệ tấm sprite cho <b>mọi</b> con trong bảng, kể cả những con của lần chạy
+    /// trước. Chỉ cần đọc khối IHDR của tệp PNG ngoài đĩa nên rẻ, mà bù lại bảng cũ ghi trước
+    /// khi có trường này cũng tự lành, khỏi phải xin lại hình.
+    /// </summary>
+    private void TinhLaiTiLe(Dictionary<int, QuaiRa> bangGop)
+    {
+        foreach (var q in bangGop.Values)
+        {
+            if (q.Rects == null || q.Rects.Length == 0) continue;
+
+            var duong = Path.Combine(thuMuc, q.MobTemplateId + ".png");
+            if (!File.Exists(duong)) continue;
+
+            try
+            {
+                // Chỉ cần đúng cái đầu tệp: rộng/cao nằm ngay trong khối IHDR.
+                var dau = new byte[64];
+                using (var f = File.OpenRead(duong))
+                {
+                    if (f.Read(dau, 0, dau.Length) < dau.Length) continue;
+                }
+
+                if (!AnhPng.KichThuoc(dau, out var rongAnh, out var caoAnh)) continue;
+
+                q.SheetW = rongAnh;
+                q.SheetH = caoAnh;
+                q.Scale = HinhQuai.TinhTiLe(rongAnh, caoAnh,
+                    q.Rects.Select(r => new OAnh { x0 = r.X, y0 = r.Y, w = r.W, h = r.H }).ToArray());
+            }
+            catch (Exception)
+            {
+                Interlocked.Increment(ref soLoi);
+            }
+        }
+    }
+
     private static QuaiRa Chuyen(HinhQuai q) => new()
     {
         MobTemplateId = q.mobTemplateId,
@@ -204,6 +255,9 @@ public sealed class BoQuai
             .Select((_, i) => new ManhRa { Dx = k.dx[i], Dy = k.dy[i], O = k.oAnh[i] })
             .ToArray()).ToArray(),
         Anim = q.chuoiKhung,
+        Scale = q.tiLe,
+        SheetW = q.rongAnh,
+        SheetH = q.caoAnh,
         AutoSize = q.thieuKichThuocO
     };
 
@@ -230,6 +284,8 @@ public sealed class BoQuai
 
         lock (khoa)
             foreach (var kv in bang) gop[kv.Key] = kv.Value;
+
+        TinhLaiTiLe(gop);
 
         var ds = gop.Values.OrderBy(x => x.MobTemplateId).ToList();
         File.WriteAllText(duong, JsonSerializer.Serialize(ds, Gon) + "\n");
