@@ -131,24 +131,32 @@ main { max-width: 1560px; margin: 0 auto; padding: 18px 20px 80px; }
   display: grid; gap: 12px;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
 }
-/* Map và option chỉ có id với tên nên mỗi mục là một dòng - nhưng một dòng kéo hết 1500px
-   thì mắt phải chạy qua khoảng trống dài ngoẵng mới tới chữ, mà bó lại 860px thì nửa màn hình
-   bỏ không. Nên xếp thành nhiều cột: vẫn mỗi dòng một mục, mà lấp kín chiều ngang. */
+/* Map và option chỉ có id với tên: một bảng liền, mỗi dòng một mục, kéo hết chiều ngang.
+   Các cột rộng cố định nên id thẳng hàng từ trên xuống - mắt dò theo cột chứ không phải
+   nhặt từng dòng. */
 .luoi {
-  display: grid; gap: 8px;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-}
-.o-nho {
-  display: flex; align-items: center; gap: 14px;
-  padding: 11px 14px; cursor: pointer;
   background: var(--noi); border: 1px solid var(--vien);
-  border-radius: 10px; box-shadow: var(--bong-1);
+  border-radius: var(--r); box-shadow: var(--bong-1); overflow: hidden;
 }
+.o-dau, .o-nho {
+  display: flex; align-items: center; gap: 16px;
+  padding: 10px 16px;
+}
+.o-dau {
+  font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--chu-mo); background: var(--chim);
+  border-bottom: 1px solid var(--vien);
+}
+.o-nho { cursor: pointer; border-bottom: 1px solid var(--vien-mo); }
+.o-nho:last-child { border-bottom: 0; }
 .o-nho:hover { background: var(--nhan-mo); }
 .o-nho[aria-selected="true"] { background: var(--nhan-mo); box-shadow: inset 3px 0 0 var(--nhan); }
-.o-nho .chep { flex: none; min-width: 62px; justify-content: center; }
+.o-nho .chep, .o-dau .c-id { flex: none; width: 74px; }
+.o-nho .chep { justify-content: center; }
+.o-nho .nho-ten, .o-dau .c-ten { flex: 1; min-width: 0; }
 .o-nho .nho-ten { font-weight: 600; font-size: 15px; }
-.o-nho .nho-phu { margin-left: auto; flex: none; font: 500 13px var(--mono); color: var(--chu-mo); }
+.o-nho .nho-phu, .o-dau .c-loai { flex: none; width: 84px; text-align: right; }
+.o-nho .nho-phu { font: 500 13px var(--mono); color: var(--chu-mo); }
 
 .the {
   background: var(--noi); border: 1px solid var(--vien); border-radius: var(--r);
@@ -247,12 +255,14 @@ main { max-width: 1560px; margin: 0 auto; padding: 18px 20px 80px; }
 }
 .the-duoi .chep { background: var(--noi); }
 .chep:hover { background: var(--nhan); color: var(--nhan-chu); border-color: var(--nhan); }
+/* Biểu tượng chép hiện sẵn chứ không đợi rê chuột: trên điện thoại không có rê chuột, mà
+   ngay cả trên máy tính thì cũng phải nhìn thấy mới biết bấm được. */
 .chep::after {
   content: ""; width: 12px; height: 12px; flex: none; background: currentColor;
   -webkit-mask: var(--ic-chep) center/contain no-repeat; mask: var(--ic-chep) center/contain no-repeat;
-  opacity: 0; transition: opacity .1s;
+  opacity: .45; transition: opacity .1s;
 }
-.chep:hover::after { opacity: .8; }
+.chep:hover::after { opacity: .9; }
 .chep.xong { background: var(--dat); border-color: var(--dat); color: #fff; }
 .chep.xong::after {
   opacity: 1;
@@ -799,14 +809,18 @@ const VE = {
     </div>
   </article>`).join(""),
 
-  option: (ds) => ds.map((x, i) => `<article class="o-nho" data-i="${i}">
-    ${chep(x.id)}<span class="nho-ten">${thoat(x.name)}</span>
-    <span class="nho-phu">loại ${x.type}</span>
-  </article>`).join(""),
+  option: (ds) => `<div class="o-dau"><span class="c-id">Id</span>
+    <span class="c-ten">Tên</span><span class="c-loai">Loại</span></div>` +
+    ds.map((x, i) => `<article class="o-nho" data-i="${i}">
+      ${chep(x.id)}<span class="nho-ten">${thoat(x.name)}</span>
+      <span class="nho-phu">${x.type}</span>
+    </article>`).join(""),
 
-  map: (ds) => ds.map((x, i) => `<article class="o-nho" data-i="${i}">
-    ${chep(x.id)}<span class="nho-ten">${thoat(x.name)}</span>
-  </article>`).join("")
+  map: (ds) => `<div class="o-dau"><span class="c-id">Id</span>
+    <span class="c-ten">Tên map</span></div>` +
+    ds.map((x, i) => `<article class="o-nho" data-i="${i}">
+      ${chep(x.id)}<span class="nho-ten">${thoat(x.name)}</span>
+    </article>`).join("")
 };
 
 /**
