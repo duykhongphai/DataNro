@@ -54,7 +54,12 @@ body {
   color: var(--chu);
   font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   -webkit-text-size-adjust: 100%;
+  /* Không cho bôi đen: cả trang là những mảng bấm được, kéo chuột hay bấm hai lần chỉ tổ quét
+     xanh loang lổ. Muốn lấy chữ thì bấm chip chép hoặc nút "Chép JSON" trong ngăn chi tiết. */
+  -webkit-user-select: none; user-select: none;
 }
+/* Trừ ô nhập: không chọn được chữ trong đó thì sửa từ khoá đã gõ rất khó chịu. */
+input, textarea { -webkit-user-select: text; user-select: text; }
 a { color: var(--nhan); }
 ::selection { background: var(--nhan); color: var(--nhan-chu); }
 
