@@ -7,218 +7,362 @@
 <meta name="description" content="Tra cứu vật phẩm, quái, NPC, kĩ năng và bản đồ của Ngọc Rồng Online. Dữ liệu lấy thẳng từ máy chủ, cập nhật tự động mỗi ngày.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🐉</text></svg>">
 <style>
-/* ============ nền tảng ============ */
+/* ══════════ bảng màu ══════════ */
 :root {
-  --nen: #f6f7f9;
-  --nen-noi: #ffffff;
-  --nen-chim: #eceef2;
-  --vien: #d8dce4;
-  --chu: #171a20;
-  --chu-mo: #646c7a;
-  --nhan: #d95f2b;
+  --nen:      #f2f4f8;
+  --noi:      #ffffff;
+  --chim:     #e9edf3;
+  --cao:      #ffffff;
+  --vien:     #dbe1ea;
+  --vien-mo:  #e8ecf2;
+  --chu:      #0f151d;
+  --chu-vua:  #495768;
+  --chu-mo:   #7a8899;
+  --nhan:     #d95d0e;
   --nhan-chu: #ffffff;
-  --xanh: #2f8f4e;
-  --lam: #2b6fd9;
-  --cam: #c8761a;
-  --xam: #6b7280;
-  --do: #c33c3c;
-  --bong: 0 1px 2px rgba(16, 20, 30, .06), 0 8px 24px rgba(16, 20, 30, .06);
-  --r: 10px;
+  --nhan-mo:  rgba(217, 93, 14, .10);
+  --dat:      #1a7f37;
+  --nam:      #0969da;
+  --xay:      #9a6700;
+  --xam:      #6a7482;
+  --do:       #c0392b;
+  --bong-1:   0 1px 2px rgba(15, 21, 29, .05);
+  --bong-2:   0 4px 12px rgba(15, 21, 29, .08), 0 1px 3px rgba(15, 21, 29, .06);
+  --bong-3:   0 16px 48px rgba(15, 21, 29, .18);
   --mono: ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono", Consolas, monospace;
+  --r: 12px;
 }
 html[data-theme="toi"] {
-  --nen: #0e1116;
-  --nen-noi: #161b22;
-  --nen-chim: #1c222c;
-  --vien: #2a323d;
-  --chu: #e6e9ef;
-  --chu-mo: #8b95a5;
-  --nhan: #ff7a45;
-  --nhan-chu: #1a0d06;
-  --xanh: #56c07a;
-  --lam: #62a0ff;
-  --cam: #e5a24a;
-  --xam: #98a2b3;
-  --do: #f0716e;
-  --bong: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
+  --nen:      #0a0e14;
+  --noi:      #121820;
+  --chim:     #171e28;
+  --cao:      #1b2430;
+  --vien:     #26313f;
+  --vien-mo:  #1d2632;
+  --chu:      #eaeff6;
+  --chu-vua:  #a9b6c6;
+  --chu-mo:   #75828f;
+  --nhan:     #ff8a3d;
+  --nhan-chu: #1a0c02;
+  --nhan-mo:  rgba(255, 138, 61, .13);
+  --dat:      #4ec26a;
+  --nam:      #6cb0ff;
+  --xay:      #e5b055;
+  --xam:      #93a0b0;
+  --do:       #f47b72;
+  --bong-1:   0 1px 2px rgba(0, 0, 0, .4);
+  --bong-2:   0 4px 14px rgba(0, 0, 0, .45);
+  --bong-3:   0 20px 60px rgba(0, 0, 0, .6);
 }
+
 * { box-sizing: border-box; }
-html, body { height: 100%; }
 body {
   margin: 0;
   background: var(--nen);
   color: var(--chu);
-  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   -webkit-text-size-adjust: 100%;
 }
-a { color: var(--lam); }
+a { color: var(--nhan); }
+::selection { background: var(--nhan); color: var(--nhan-chu); }
 
-/* ============ thanh trên ============ */
+/* ══════════ thanh trên ══════════ */
 .dinh {
-  position: sticky; top: 0; z-index: 20;
-  background: color-mix(in srgb, var(--nen) 88%, transparent);
-  backdrop-filter: blur(10px);
+  position: sticky; top: 0; z-index: 30;
+  background: color-mix(in srgb, var(--nen) 82%, transparent);
+  backdrop-filter: saturate(1.6) blur(14px);
   border-bottom: 1px solid var(--vien);
 }
-.dinh-trong {
-  max-width: 1400px; margin: 0 auto; padding: 10px 16px;
-  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+.hang {
+  max-width: 1500px; margin: 0 auto; padding: 0 20px;
+  display: flex; align-items: center; gap: 14px;
 }
-.hieu { display: flex; align-items: baseline; gap: 8px; margin-right: auto; }
-.hieu b { font-size: 18px; letter-spacing: -.02em; }
-.hieu span { color: var(--chu-mo); font-size: 12px; }
+.hang-1 { height: 60px; }
+.hang-2 { height: 52px; border-top: 1px solid var(--vien-mo); gap: 10px; }
 
-.tab { display: flex; gap: 2px; background: var(--nen-chim); padding: 3px; border-radius: var(--r); }
-.tab button {
-  border: 0; background: transparent; color: var(--chu-mo);
-  padding: 6px 12px; border-radius: 7px; cursor: pointer;
-  font: inherit; font-weight: 500; white-space: nowrap;
-}
-.tab button:hover { color: var(--chu); }
-.tab button[aria-selected="true"] { background: var(--nhan); color: var(--nhan-chu); }
-
-select, input[type="search"] {
-  font: inherit; color: var(--chu); background: var(--nen-noi);
-  border: 1px solid var(--vien); border-radius: 8px; padding: 6px 10px;
-}
-input[type="search"] { min-width: 240px; }
-select:focus-visible, input:focus-visible, button:focus-visible {
-  outline: 2px solid var(--nhan); outline-offset: 1px;
-}
-.nut-icon {
-  border: 1px solid var(--vien); background: var(--nen-noi); color: var(--chu);
-  width: 34px; height: 34px; border-radius: 8px; cursor: pointer; font-size: 15px;
-  display: grid; place-items: center;
+.hieu { display: flex; align-items: center; gap: 10px; margin-right: 4px; }
+.hieu .rong { font-size: 24px; line-height: 1; }
+.hieu b { font-size: 19px; letter-spacing: -.03em; }
+.hieu i {
+  font-style: normal; font-size: 12px; color: var(--chu-mo);
+  padding-left: 10px; margin-left: 2px; border-left: 1px solid var(--vien);
 }
 
-/* ============ thanh công cụ ============ */
-.cong-cu {
-  max-width: 1400px; margin: 0 auto; padding: 12px 16px 0;
-  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+nav.tab { display: flex; gap: 4px; margin-left: auto; }
+nav.tab button {
+  border: 1px solid transparent; background: transparent; color: var(--chu-vua);
+  padding: 7px 14px; border-radius: 9px; cursor: pointer;
+  font: inherit; font-size: 14px; font-weight: 550; white-space: nowrap;
+  transition: background .12s, color .12s;
 }
-.dem { color: var(--chu-mo); font-size: 13px; margin-left: auto; }
-.dem b { color: var(--chu); font-variant-numeric: tabular-nums; }
+nav.tab button:hover { background: var(--chim); color: var(--chu); }
+nav.tab button[aria-selected="true"] {
+  background: var(--nhan); color: var(--nhan-chu); border-color: transparent;
+  box-shadow: var(--bong-1);
+}
 
-/* ============ bảng ============ */
-main { max-width: 1400px; margin: 0 auto; padding: 12px 16px 60px; }
+.o-tim { position: relative; flex: 1; max-width: 460px; }
+.o-tim svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--chu-mo); }
+.o-tim kbd {
+  position: absolute; right: 9px; top: 50%; transform: translateY(-50%);
+  font: 11px/1 var(--mono); color: var(--chu-mo);
+  border: 1px solid var(--vien); border-radius: 5px; padding: 3px 6px;
+  background: var(--nen); pointer-events: none;
+}
+input[type="search"] {
+  width: 100%; font: inherit; font-size: 14px; color: var(--chu);
+  background: var(--noi); border: 1px solid var(--vien);
+  border-radius: 9px; padding: 8px 42px 8px 34px;
+}
+input[type="search"]::-webkit-search-cancel-button { filter: grayscale(1) opacity(.6); }
+select {
+  font: inherit; font-size: 14px; color: var(--chu); background: var(--noi);
+  border: 1px solid var(--vien); border-radius: 9px; padding: 8px 10px;
+}
+:is(select, input, button, a):focus-visible {
+  outline: 2px solid var(--nhan); outline-offset: 2px;
+}
+
+.nut {
+  display: inline-flex; align-items: center; gap: 7px;
+  border: 1px solid var(--vien); background: var(--noi); color: var(--chu-vua);
+  border-radius: 9px; padding: 8px 12px; cursor: pointer;
+  font: inherit; font-size: 13px; font-weight: 550; white-space: nowrap;
+}
+.nut:hover { background: var(--chim); color: var(--chu); border-color: var(--chu-mo); }
+.nut-tron { padding: 8px; width: 37px; justify-content: center; }
+
+.dem { margin-left: auto; color: var(--chu-mo); font-size: 13px; white-space: nowrap; }
+.dem b { color: var(--chu); font-variant-numeric: tabular-nums; font-weight: 650; }
+
+/* ══════════ khung nội dung ══════════ */
+main { max-width: 1500px; margin: 0 auto; padding: 18px 20px 80px; }
 .khung {
-  background: var(--nen-noi); border: 1px solid var(--vien);
-  border-radius: var(--r); box-shadow: var(--bong); overflow: hidden;
+  background: var(--noi); border: 1px solid var(--vien);
+  border-radius: var(--r); box-shadow: var(--bong-2); overflow: hidden;
 }
-.cuon {
-  overflow: auto;
-  max-height: calc(100vh - 150px);
-  overscroll-behavior: contain;
-}
-table { border-collapse: collapse; width: 100%; }
-th, td { padding: 7px 10px; text-align: left; vertical-align: top; }
+.cuon { overflow: auto; max-height: calc(100vh - 176px); overscroll-behavior: contain; }
+
+/* ══════════ bảng ══════════ */
+table { border-collapse: separate; border-spacing: 0; width: 100%; }
 thead th {
-  /* Dính theo khung .cuon (nó mới là chỗ cuộn), nên top phải là 0 chứ không phải chiều cao
-     thanh trên - để 55px là header bị đẩy xuống đè lên mấy hàng đầu. */
   position: sticky; top: 0; z-index: 5;
-  background: var(--nen-chim); color: var(--chu-mo);
-  font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
-  white-space: nowrap; border-bottom: 1px solid var(--vien);
+  background: var(--chim); color: var(--chu-mo);
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
+  text-align: left; white-space: nowrap;
+  padding: 10px 14px; border-bottom: 1px solid var(--vien);
 }
-tbody tr { border-top: 1px solid color-mix(in srgb, var(--vien) 55%, transparent); }
-tbody tr:hover { background: color-mix(in srgb, var(--nhan) 7%, transparent); }
-td.so { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--chu-mo); white-space: nowrap; }
-td.ten { font-weight: 600; }
-td.mo { color: var(--chu-mo); max-width: 460px; }
-.anh {
-  /* Ảnh lấy ở mức phóng 4 nên to gấp bốn lần cỡ trong game; ở đây bị THU NHỎ lại 32px.
-     Vì vậy không dùng image-rendering: pixelated - cái đó để phóng to ảnh pixel nhỏ, đem
-     thu nhỏ thì chỉ ra răng cưa. Để trình duyệt tự lọc mượt, màn hình HiDPI còn được lợi. */
-  width: 32px; height: 32px; object-fit: contain;
-  background: var(--nen-chim); border-radius: 6px; padding: 2px;
-}
-.anh.trong { visibility: hidden; }
-.bo-anh { display: flex; gap: 3px; }
+tbody td { padding: 9px 14px; border-bottom: 1px solid var(--vien-mo); vertical-align: middle; }
+tbody tr { cursor: pointer; }
+tbody tr:hover td { background: var(--nhan-mo); }
+tbody tr[aria-selected="true"] td { background: var(--nhan-mo); box-shadow: inset 3px 0 0 var(--nhan); }
+td.so { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.hep { width: 1%; }
 
-.the {
-  display: inline-block; padding: 1px 7px; border-radius: 20px;
-  font-size: 11px; font-weight: 600; white-space: nowrap;
-  border: 1px solid currentColor;
-}
-.the.dat { color: var(--xanh); }
-.the.nam { color: var(--lam); }
-.the.xay { color: var(--cam); }
-.the.chung { color: var(--xam); }
-.the.loai { color: var(--chu-mo); font-weight: 500; }
+.ten-chinh { font-weight: 650; font-size: 15px; letter-spacing: -.01em; }
+.ten-phu { color: var(--chu-mo); font-size: 13px; margin-top: 1px; }
 
-/* ============ kĩ năng ============ */
-details.chieu { border-top: 1px solid color-mix(in srgb, var(--vien) 55%, transparent); }
+/* ══════════ ảnh ══════════ */
+.o-anh {
+  width: 52px; height: 52px; border-radius: 10px;
+  background: var(--chim); border: 1px solid var(--vien-mo);
+  display: grid; place-items: center; overflow: hidden; flex: none;
+}
+.o-anh img { max-width: 46px; max-height: 46px; object-fit: contain; }
+.o-anh.trong::after { content: "?"; color: var(--chu-mo); font: 600 15px var(--mono); }
+.o-anh.trong img { display: none; }
+.bo-anh { display: flex; gap: 5px; }
+.bo-anh .o-anh { width: 46px; height: 46px; border-radius: 9px; }
+.bo-anh .o-anh img { max-width: 40px; max-height: 40px; }
+
+/* ══════════ chip ══════════ */
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 7px;
+  font-size: 12px; font-weight: 600; white-space: nowrap;
+  background: var(--chim); color: var(--chu-vua); border: 1px solid transparent;
+}
+.chip.dat { color: var(--dat); background: color-mix(in srgb, var(--dat) 13%, transparent); }
+.chip.nam { color: var(--nam); background: color-mix(in srgb, var(--nam) 13%, transparent); }
+.chip.xay { color: var(--xay); background: color-mix(in srgb, var(--xay) 15%, transparent); }
+.chip.xam { color: var(--xam); background: color-mix(in srgb, var(--xam) 13%, transparent); }
+
+/* Bấm vào là chép — thứ dùng nhiều nhất của trang này. */
+.chep {
+  font-family: var(--mono); font-size: 13px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 8px; border-radius: 7px; cursor: pointer;
+  background: var(--chim); color: var(--chu); border: 1px solid var(--vien-mo);
+  transition: background .1s, border-color .1s, color .1s;
+}
+.chep:hover { background: var(--nhan); color: var(--nhan-chu); border-color: var(--nhan); }
+.chep::after {
+  content: "⧉"; font-size: 12px; opacity: 0; transition: opacity .1s;
+}
+.chep:hover::after { opacity: .75; }
+.chep.xong { background: var(--dat); border-color: var(--dat); color: #fff; }
+.chep.xong::after { content: "✓"; opacity: 1; }
+
+/* ══════════ lưới thẻ (map, option) ══════════ */
+.luoi {
+  display: grid; gap: 8px; padding: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+}
+.the-nho {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 11px; border-radius: 10px;
+  background: var(--chim); border: 1px solid transparent; cursor: pointer;
+}
+.the-nho:hover { border-color: var(--nhan); background: var(--nhan-mo); }
+.the-nho .sid {
+  font: 600 12px var(--mono); color: var(--chu-mo);
+  min-width: 40px; text-align: right; flex: none;
+}
+.the-nho .stn { font-weight: 550; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ══════════ kĩ năng ══════════ */
+.lop-dau {
+  position: sticky; top: 0; z-index: 4;
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 16px; background: var(--chim);
+  border-bottom: 1px solid var(--vien); border-top: 1px solid var(--vien);
+  font-size: 13px; color: var(--chu-mo);
+}
+.lop-dau:first-child { border-top: 0; }
+.lop-dau b { color: var(--chu); font-size: 16px; letter-spacing: -.01em; }
+
+details.chieu { border-bottom: 1px solid var(--vien-mo); }
 details.chieu > summary {
-  padding: 8px 10px; cursor: pointer; display: flex; gap: 10px; align-items: center;
+  padding: 10px 16px; cursor: pointer; display: flex; gap: 12px; align-items: center;
   list-style: none;
 }
 details.chieu > summary::-webkit-details-marker { display: none; }
-details.chieu > summary:hover { background: color-mix(in srgb, var(--nhan) 7%, transparent); }
-details.chieu > summary::before { content: "▸"; color: var(--chu-mo); width: 12px; }
-details.chieu[open] > summary::before { content: "▾"; }
-.chieu-ten { font-weight: 600; }
-.chieu-mo { color: var(--chu-mo); font-size: 13px; }
-.cap { padding: 0 10px 12px 32px; }
-.cap table { font-size: 13px; }
-.cap thead th { position: static; background: transparent; border-bottom: 1px solid var(--vien); }
-h2.lop {
-  position: sticky; top: 0; z-index: 4;
-  margin: 0; padding: 10px 12px; background: var(--nen-chim);
-  font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--chu-mo);
-  border-top: 1px solid var(--vien);
+details.chieu > summary:hover { background: var(--nhan-mo); }
+details.chieu > summary::before {
+  content: "›"; color: var(--chu-mo); font-size: 19px; width: 12px;
+  transition: transform .15s; flex: none;
 }
-h2.lop:first-child { border-top: 0; }
-h2.lop b { color: var(--chu); font-size: 14px; text-transform: none; letter-spacing: 0; }
+details.chieu[open] > summary::before { transform: rotate(90deg); }
+.cap-bang { padding: 4px 16px 16px 56px; }
+.cap-bang table { font-size: 13px; }
+.cap-bang thead th { position: static; background: transparent; padding: 6px 10px; }
+.cap-bang td { padding: 6px 10px; }
+.cap-bang tbody tr { cursor: default; }
+.cap-bang tbody tr:hover td { background: transparent; }
 
-.menu-npc { margin: 0; padding-left: 16px; color: var(--chu-mo); font-size: 13px; }
+/* ══════════ ngăn chi tiết ══════════ */
+.man {
+  position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, .45);
+  opacity: 0; pointer-events: none; transition: opacity .18s;
+}
+.man.hien { opacity: 1; pointer-events: auto; }
+aside.ngan {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 41; width: 400px; max-width: 92vw;
+  background: var(--noi); border-left: 1px solid var(--vien); box-shadow: var(--bong-3);
+  transform: translateX(102%); transition: transform .22s cubic-bezier(.32, .72, 0, 1);
+  display: flex; flex-direction: column;
+}
+aside.ngan.hien { transform: none; }
+.ngan-dau {
+  display: flex; align-items: flex-start; gap: 13px;
+  padding: 18px 18px 15px; border-bottom: 1px solid var(--vien);
+}
+.ngan-dau .o-anh { width: 64px; height: 64px; }
+.ngan-dau .o-anh img { max-width: 58px; max-height: 58px; }
+.ngan-dau h2 { margin: 0; font-size: 18px; letter-spacing: -.02em; }
+.ngan-dau p { margin: 3px 0 0; color: var(--chu-mo); font-size: 13px; }
+.ngan-than { overflow: auto; padding: 6px 0; flex: 1; }
+.dong-tt {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 18px; border-bottom: 1px solid var(--vien-mo);
+}
+.dong-tt:last-child { border-bottom: 0; }
+.dong-tt .nhan-tt { color: var(--chu-mo); font-size: 13px; flex: none; width: 122px; }
+.dong-tt .gia-tt { flex: 1; min-width: 0; word-break: break-word; font-size: 14px; }
+.ngan-chan { padding: 13px 18px; border-top: 1px solid var(--vien); display: flex; gap: 9px; }
+.ngan-chan .nut { flex: 1; justify-content: center; }
 
-.trong-rong { padding: 40px 16px; text-align: center; color: var(--chu-mo); }
-.loi { color: var(--do); }
+/* ══════════ vặt ══════════ */
+.trong-rong { padding: 60px 20px; text-align: center; color: var(--chu-mo); }
+.trong-rong.loi { color: var(--do); }
+#banh {
+  position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 18px);
+  z-index: 60; background: var(--chu); color: var(--nen);
+  padding: 10px 18px; border-radius: 999px; font-size: 14px; font-weight: 600;
+  box-shadow: var(--bong-3); opacity: 0; pointer-events: none;
+  transition: opacity .16s, transform .16s;
+}
+#banh.hien { opacity: 1; transform: translate(-50%, 0); }
 footer {
-  max-width: 1400px; margin: 0 auto; padding: 0 16px 40px;
-  color: var(--chu-mo); font-size: 12px;
+  max-width: 1500px; margin: 0 auto; padding: 0 20px 48px;
+  color: var(--chu-mo); font-size: 13px;
 }
-@media (max-width: 720px) {
-  .cuon { max-height: calc(100vh - 190px); }
-  td.mo { display: none; }
-  th.mo { display: none; }
-  input[type="search"] { min-width: 140px; flex: 1; }
+
+@media (max-width: 900px) {
+  .hang-1 { height: auto; padding-top: 10px; padding-bottom: 10px; flex-wrap: wrap; }
+  nav.tab { order: 3; width: 100%; overflow-x: auto; margin-left: 0; }
+  .hieu i { display: none; }
+  .cuon { max-height: none; }
+  .an-hep { display: none !important; }
+  .o-tim kbd { display: none; }
+
+  /* Thanh công cụ phải xuống dòng: nhét năm thứ vào một hàng 375px thì ô tìm bị bóp còn
+     đúng cái kính lúp, mà tìm kiếm mới là thứ dùng nhiều nhất. */
+  .hang-2 { height: auto; padding-top: 9px; padding-bottom: 9px; flex-wrap: wrap; }
+  .o-tim { order: -1; flex: 1 0 100%; max-width: none; }
+  .dem { margin-left: auto; }
 }
 </style>
 </head>
 <body>
 
 <header class="dinh">
-  <div class="dinh-trong">
-    <div class="hieu"><b>DataNro</b> <span id="capnhat">đang tải…</span></div>
+  <div class="hang hang-1">
+    <div class="hieu">
+      <span class="rong">🐉</span>
+      <b>DataNro</b>
+      <i id="capnhat">đang tải…</i>
+    </div>
     <nav class="tab" id="tab" role="tablist"></nav>
-    <button class="nut-icon" id="doi-mau" title="Đổi sáng/tối" aria-label="Đổi sáng tối">◐</button>
+    <button class="nut nut-tron" id="doi-mau" title="Đổi sáng / tối" aria-label="Đổi sáng tối">◐</button>
+  </div>
+
+  <div class="hang hang-2">
+    <select id="chon-sv" aria-label="Chọn máy chủ"></select>
+    <label class="o-tim">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+        <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+      </svg>
+      <input type="search" id="tim" placeholder="Tìm theo tên, mô tả hoặc id…" autocomplete="off" spellcheck="false">
+      <kbd>/</kbd>
+    </label>
+    <select id="sap" aria-label="Sắp xếp">
+      <option value="id">Sắp theo id</option>
+      <option value="ten">Sắp theo tên</option>
+    </select>
+    <button class="nut" id="chep-tat" title="Chép id của mọi mục đang hiện">Chép id</button>
+    <span class="dem" id="dem"></span>
   </div>
 </header>
-
-<div class="cong-cu">
-  <select id="chon-sv" aria-label="Chọn máy chủ"></select>
-  <input type="search" id="tim" placeholder="Tìm theo tên, mô tả hoặc id…" autocomplete="off" spellcheck="false">
-  <select id="sap" aria-label="Sắp xếp">
-    <option value="id">Theo id</option>
-    <option value="ten">Theo tên</option>
-  </select>
-  <span class="dem" id="dem"></span>
-</div>
 
 <main>
   <div class="khung"><div class="cuon" id="noi-dung"></div></div>
 </main>
 
 <footer>
-  Dữ liệu lấy thẳng từ máy chủ game bằng <code>DataNro.Dumper</code>, cập nhật tự động mỗi ngày.
-  <a id="link-json" href="#">Xem JSON gốc</a>
+  Dữ liệu lấy thẳng từ máy chủ game, cập nhật tự động mỗi ngày ·
+  <a id="link-json" href="#">JSON gốc</a> ·
+  <a href="https://github.com/duykhongphai/DataNro">Mã nguồn</a>
 </footer>
+
+<div class="man" id="man"></div>
+<aside class="ngan" id="ngan" aria-hidden="true"></aside>
+<div id="banh" role="status" aria-live="polite"></div>
 
 <script>
 "use strict";
 
-// ==================== bảng tra cứu ====================
+// ══════════ bảng tra cứu ══════════
 
 // Chép từ Models/ItemTemplateType.cs của engine. Máy chủ chỉ gửi một con số.
 const LOAI_VAT_PHAM = {
@@ -232,50 +376,41 @@ const LOAI_VAT_PHAM = {
   36: "Danh hiệu", 37: "Sách kĩ năng loại hai"
 };
 
-// Client hiển thị theo hành tinh; 3 nghĩa là dùng chung cho cả ba.
+// gender 0/1/2 là riêng hành tinh, 3 là dùng chung cả ba.
 const HANH_TINH = [
   { ten: "Trái Đất", lop: "dat" },
   { ten: "Namếc", lop: "nam" },
   { ten: "Xayda", lop: "xay" },
-  { ten: "Chung", lop: "chung" }
+  { ten: "Chung", lop: "xam" }
 ];
 
 const MUC = {
-  vatpham: { ten: "Vật phẩm", tep: "ItemTemplates.json", ve: veVatPham },
-  quai:    { ten: "Quái",     tep: "MobTemplates.json",  ve: veQuai },
-  npc:     { ten: "NPC",      tep: "NpcTemplates.json",  ve: veNpc },
-  chieu:   { ten: "Kĩ năng",  tep: "NClasses.json",      ve: veChieu },
-  option:  { ten: "Option",   tep: "ItemOptionTemplates.json", ve: veOption },
-  map:     { ten: "Map",      tep: "Maps.json",          ve: veMap }
+  vatpham: { ten: "Vật phẩm", tep: "ItemTemplates.json" },
+  quai:    { ten: "Quái",     tep: "MobTemplates.json" },
+  npc:     { ten: "NPC",      tep: "NpcTemplates.json" },
+  chieu:   { ten: "Kĩ năng",  tep: "NClasses.json" },
+  option:  { ten: "Option",   tep: "ItemOptionTemplates.json" },
+  map:     { ten: "Map",      tep: "Maps.json" }
 };
 
 const MAC_DINH = {
   nhaPhatHanh: [{ id: "TeaMobi", ten: "TeaMobi", mayChu: [{ id: "Server1", ten: "Server 1" }] }]
 };
 
-// ==================== trạng thái ====================
+// ══════════ trạng thái ══════════
 
-const trangThai = {
-  chiMuc: MAC_DINH,
-  nph: "TeaMobi",
-  sv: "Server1",
-  muc: "vatpham",
-  tim: "",
-  sap: "id"
-};
-
-const kho = new Map();   // "nph/sv/tep" -> mảng đã tải
+const T = { chiMuc: MAC_DINH, nph: "TeaMobi", sv: "Server1", muc: "vatpham", tim: "", sap: "id" };
+const kho = new Map();
+let dangHien = [];   // danh sách đang hiển thị, để nút "Chép id" và ngăn chi tiết dùng lại
 const $ = (id) => document.getElementById(id);
 
-// ==================== tiện ích ====================
+// ══════════ tiện ích ══════════
 
 /** 1234 → "1,2N", 2000000000 → "2T". Cột sức mạnh / máu toàn số dài, để nguyên thì không đọc nổi. */
 function gonSo(n) {
-  if (n === null || n === undefined) return "";
   const x = Number(n);
-  if (!isFinite(x)) return String(n);
-  const dau = x < 0 ? "-" : "";
-  const a = Math.abs(x);
+  if (n === null || n === undefined || !isFinite(x)) return "";
+  const dau = x < 0 ? "-" : "", a = Math.abs(x);
   const rut = (v, d) => dau + (v % 1 === 0 ? v : v.toFixed(1)).toString().replace(".", ",") + d;
   if (a >= 1e9) return rut(Math.round(a / 1e8) / 10, "T");
   if (a >= 1e6) return rut(Math.round(a / 1e5) / 10, "Tr");
@@ -283,29 +418,58 @@ function gonSo(n) {
   return dau + a.toLocaleString("vi-VN");
 }
 
-function thoat(s) {
-  return String(s ?? "").replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const thoat = (s) => String(s ?? "").replace(/[&<>"']/g,
+  (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+const khongDau = (s) => String(s ?? "").normalize("NFD")
+  .replace(/[̀-ͯ]/g, "").replace(/đ/gi, "d").toLowerCase();
+
+/** Ô ảnh; thiếu ảnh thì hiện dấu hỏi chứ đừng để khung trống trơn. */
+function veAnh(id, lop = "") {
+  if (id === null || id === undefined || id < 0) return `<span class="o-anh trong ${lop}"></span>`;
+  return `<span class="o-anh ${lop}"><img loading="lazy" decoding="async" alt=""
+    src="${T.nph}/Icons/${id}.png"
+    onerror="this.parentNode.classList.add('trong')"></span>`;
 }
 
-/** Ảnh icon; thiếu ảnh thì ẩn đi chứ đừng để khung vỡ. */
-function veAnh(id) {
-  if (id === null || id === undefined || id < 0) return '<span class="anh trong"></span>';
-  return `<img class="anh" loading="lazy" decoding="async" alt=""
-    src="${trangThai.nph}/Icons/${id}.png"
-    onerror="this.classList.add('trong')">`;
+/** Chip bấm là chép. Đây là thứ dùng nhiều nhất của trang này nên để nó thật rõ. */
+const chep = (giaTri, nhan) =>
+  `<span class="chep" data-chep="${thoat(giaTri)}" title="Bấm để chép">${thoat(nhan ?? giaTri)}</span>`;
+
+const chipHanhTinh = (g) => {
+  const h = HANH_TINH[g] ?? { ten: "?" + g, lop: "xam" };
+  return `<span class="chip ${h.lop}">${h.ten}</span>`;
+};
+
+// ══════════ chép ══════════
+
+let hetBanh;
+
+function banh(chu) {
+  const b = $("banh");
+  b.textContent = chu;
+  b.classList.add("hien");
+  clearTimeout(hetBanh);
+  hetBanh = setTimeout(() => b.classList.remove("hien"), 1600);
 }
 
-function theHanhTinh(g) {
-  const h = HANH_TINH[g] || { ten: "?" + g, lop: "chung" };
-  return `<span class="the ${h.lop}">${h.ten}</span>`;
+async function chepChu(chu, loi) {
+  try {
+    await navigator.clipboard.writeText(chu);
+  } catch {
+    // Trình duyệt cũ hoặc trang không chạy https: rơi về cách cũ.
+    const o = document.createElement("textarea");
+    o.value = chu;
+    o.style.cssText = "position:fixed;opacity:0";
+    document.body.appendChild(o);
+    o.select();
+    try { document.execCommand("copy"); } catch { banh("Không chép được"); }
+    o.remove();
+  }
+  banh(loi ?? `Đã chép: ${chu.length > 42 ? chu.slice(0, 42) + "…" : chu}`);
 }
 
-function khongDau(s) {
-  return String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/gi, "d").toLowerCase();
-}
-
-// ==================== tải dữ liệu ====================
+// ══════════ tải dữ liệu ══════════
 
 async function docJson(duong) {
   const res = await fetch(duong, { cache: "no-cache" });
@@ -314,100 +478,65 @@ async function docJson(duong) {
 }
 
 async function layMuc(muc) {
-  const tep = MUC[muc].tep;
-  const khoa = `${trangThai.nph}/${trangThai.sv}/${tep}`;
+  const khoa = `${T.nph}/${T.sv}/${MUC[muc].tep}`;
   if (kho.has(khoa)) return kho.get(khoa);
   const dl = await docJson(khoa);
   kho.set(khoa, dl);
   return dl;
 }
 
-// ==================== vẽ từng mục ====================
+// ══════════ vẽ từng mục ══════════
 
-function bang(cot, hang) {
-  return `<table><thead><tr>${cot}</tr></thead><tbody>${hang}</tbody></table>`;
-}
+const bang = (cot, hang) => `<table><thead><tr>${cot}</tr></thead><tbody>${hang}</tbody></table>`;
 
-function veVatPham(ds) {
-  const cot = `<th>Ảnh</th><th>Id</th><th>Tên</th><th class="mo">Mô tả</th>
-    <th>Loại</th><th>Cho</th><th>Sức mạnh</th><th>Cấp</th>`;
-  const hang = ds.map((x) => `<tr>
-    <td>${veAnh(x.iconID)}</td>
-    <td class="so">${x.id}</td>
-    <td class="ten">${thoat(x.name)}</td>
-    <td class="mo">${thoat(x.description)}</td>
-    <td><span class="the loai">${thoat(LOAI_VAT_PHAM[x.type] ?? "loại " + x.type)}</span></td>
-    <td>${theHanhTinh(x.gender)}</td>
-    <td class="so">${x.strRequire > 0 ? gonSo(x.strRequire) : ""}</td>
-    <td class="so">${x.level || ""}</td>
-  </tr>`).join("");
-  return bang(cot, hang);
-}
+const VE = {
+  vatpham: (ds) => bang(
+    `<th>Ảnh</th><th>Id</th><th>Tên</th><th class="an-hep">Loại</th><th class="an-hep">Cho</th>
+     <th class="an-hep">Sức mạnh</th><th class="an-hep">Cấp</th><th class="an-hep">Icon</th>`,
+    ds.map((x, i) => `<tr data-i="${i}">
+      <td class="hep">${veAnh(x.iconID)}</td>
+      <td class="hep">${chep(x.id)}</td>
+      <td>
+        <div class="ten-chinh">${thoat(x.name)}</div>
+        ${x.description ? `<div class="ten-phu">${thoat(x.description)}</div>` : ""}
+      </td>
+      <td class="an-hep"><span class="chip">${thoat(LOAI_VAT_PHAM[x.type] ?? "loại " + x.type)}</span></td>
+      <td class="an-hep">${chipHanhTinh(x.gender)}</td>
+      <td class="so an-hep">${x.strRequire > 0 ? gonSo(x.strRequire) : "—"}</td>
+      <td class="so an-hep">${x.level || "—"}</td>
+      <td class="hep an-hep">${chep(x.iconID)}</td>
+    </tr>`).join("")),
 
-function veQuai(ds) {
-  const cot = `<th>Id</th><th>Tên</th><th>Máu</th><th>Loại</th><th>Tầm đi</th><th>Tốc độ</th><th>Phi tiêu</th>`;
-  const hang = ds.map((x) => `<tr>
-    <td class="so">${x.mobTemplateId}</td>
-    <td class="ten">${thoat(x.name)}</td>
-    <td class="so">${gonSo(x.hp)}</td>
-    <td class="so">${x.type}</td>
-    <td class="so">${x.rangeMove}</td>
-    <td class="so">${x.speed}</td>
-    <td class="so">${x.dartType}</td>
-  </tr>`).join("");
-  return bang(cot, hang);
-}
+  quai: (ds) => bang(
+    `<th>Id</th><th>Tên</th><th>Máu</th><th class="an-hep">Loại</th>
+     <th class="an-hep">Tầm đi</th><th class="an-hep">Tốc độ</th><th class="an-hep">Phi tiêu</th>`,
+    ds.map((x, i) => `<tr data-i="${i}">
+      <td class="hep">${chep(x.mobTemplateId)}</td>
+      <td><div class="ten-chinh">${thoat(x.name)}</div></td>
+      <td class="so">${gonSo(x.hp)}</td>
+      <td class="so an-hep">${x.type}</td>
+      <td class="so an-hep">${x.rangeMove}</td>
+      <td class="so an-hep">${x.speed}</td>
+      <td class="so an-hep">${x.dartType}</td>
+    </tr>`).join("")),
 
-function veNpc(ds) {
-  const cot = `<th>Hình</th><th>Id</th><th>Tên</th><th class="mo">Menu</th>`;
-  const hang = ds.map((x) => `<tr>
-    <td><div class="bo-anh">${veAnh(x.headId)}${veAnh(x.bodyId)}${veAnh(x.legId)}</div></td>
-    <td class="so">${x.npcTemplateId}</td>
-    <td class="ten">${thoat(x.name)}</td>
-    <td class="mo"><ul class="menu-npc">${(x.menu || [])
-      .map((m) => `<li>${(m || []).map(thoat).join(" · ")}</li>`).join("")}</ul></td>
-  </tr>`).join("");
-  return bang(cot, hang);
-}
+  npc: (ds) => bang(
+    `<th>Hình</th><th>Id</th><th>Tên</th><th class="an-hep">Menu</th>`,
+    ds.map((x, i) => `<tr data-i="${i}">
+      <td class="hep"><div class="bo-anh">${veAnh(x.headId)}${veAnh(x.bodyId)}${veAnh(x.legId)}</div></td>
+      <td class="hep">${chep(x.npcTemplateId)}</td>
+      <td><div class="ten-chinh">${thoat(x.name)}</div></td>
+      <td class="an-hep">${(x.menu || []).flat().map((m) => chep(m)).join(" ") || "—"}</td>
+    </tr>`).join("")),
 
-function veOption(ds) {
-  const cot = `<th>Id</th><th>Tên</th><th>Loại</th>`;
-  const hang = ds.map((x) => `<tr>
-    <td class="so">${x.id}</td>
-    <td class="ten">${thoat(x.name)}</td>
-    <td class="so">${x.type}</td>
-  </tr>`).join("");
-  return bang(cot, hang);
-}
+  option: (ds) => `<div class="luoi">${ds.map((x, i) => `<div class="the-nho" data-i="${i}">
+      <span class="sid">${x.id}</span><span class="stn">${thoat(x.name)}</span>
+    </div>`).join("")}</div>`,
 
-function veMap(ds) {
-  const cot = `<th>Id</th><th>Tên</th>`;
-  const hang = ds.map((x) => `<tr>
-    <td class="so">${x.id}</td>
-    <td class="ten">${thoat(x.name)}</td>
-  </tr>`).join("");
-  return bang(cot, hang);
-}
-
-/**
- * Lọc cây kĩ năng theo ô tìm: giữ chiêu nào khớp, lớp nào không còn chiêu thì bỏ luôn.
- * Trả về cây mới chứ không sửa cây gốc - còn phải dùng lại khi xoá ô tìm.
- */
-function locChieu(ds) {
-  const q = khongDau(trangThai.tim.trim());
-  if (!q) return ds;
-
-  return ds
-    .map((lop) => ({
-      ...lop,
-      skillTemplates: (lop.skillTemplates || []).filter((st) =>
-        khongDau(st.name).includes(q) ||
-        khongDau(st.description).includes(q) ||
-        khongDau(st.damInfo).includes(q) ||
-        String(st.id) === q)
-    }))
-    .filter((lop) => lop.skillTemplates.length > 0);
-}
+  map: (ds) => `<div class="luoi">${ds.map((x, i) => `<div class="the-nho" data-i="${i}">
+      <span class="sid">${x.id}</span><span class="stn">${thoat(x.name)}</span>
+    </div>`).join("")}</div>`
+};
 
 /**
  * Kĩ năng lồng ba tầng (lớp → chiêu → cấp) nên không nhét vừa một bảng phẳng:
@@ -418,12 +547,13 @@ function veChieu(ds) {
     const chieu = (lop.skillTemplates || []).map((st) => {
       const cap = (st.skills || []).map((sk) => `<tr>
         <td class="so">${sk.point}</td>
+        <td class="hep">${chep(sk.skillId)}</td>
         <td class="so">${gonSo(sk.powRequire)}</td>
         <td class="so">${sk.damage}</td>
         <td class="so">${gonSo(sk.manaUse)}</td>
-        <td class="so">${(sk.coolDown / 1000).toString().replace(".", ",")}s</td>
+        <td class="so">${String(sk.coolDown / 1000).replace(".", ",")}s</td>
         <td class="so">${sk.dx} × ${sk.dy}</td>
-        <td class="so">${sk.price || ""}</td>
+        <td class="so">${sk.price || "—"}</td>
         <td>${thoat(sk.moreInfo)}</td>
       </tr>`).join("");
 
@@ -431,132 +561,215 @@ function veChieu(ds) {
         <summary>
           ${veAnh(st.iconId)}
           <span>
-            <span class="chieu-ten">${thoat(st.name)}</span>
-            <span class="chieu-mo"> — ${thoat(st.description)} · ${thoat(st.damInfo)}</span>
+            <div class="ten-chinh">${thoat(st.name)}</div>
+            <div class="ten-phu">${thoat(st.description)} · ${thoat(st.damInfo)}</div>
           </span>
         </summary>
-        <div class="cap">${bang(
-          `<th>Cấp</th><th>Sức mạnh</th><th>Sát thương</th><th>Ki</th><th>Hồi</th><th>Tầm</th><th>Giá</th><th>Học ở</th>`,
-          cap)}</div>
+        <div class="cap-bang">${bang(
+          `<th>Cấp</th><th>Id</th><th>Sức mạnh</th><th>Sát thương</th><th>Ki</th>
+           <th>Hồi</th><th>Tầm</th><th>Giá</th><th>Học ở</th>`, cap)}</div>
       </details>`;
     }).join("");
 
     const phu = lop.serverName && lop.serverName !== lop.name
-      ? ` — máy chủ gọi là “${thoat(lop.serverName)}”` : "";
-    return `<h2 class="lop"><b>${thoat(lop.name)}</b>${phu}</h2>${chieu}`;
+      ? `máy chủ gọi là “${thoat(lop.serverName)}”` : "";
+    return `<div class="lop-dau"><b>${thoat(lop.name)}</b> ${phu}</div>${chieu}`;
   }).join("");
 }
 
-// ==================== lọc và sắp ====================
+// ══════════ ngăn chi tiết ══════════
 
-function tenCua(x) {
-  return x.name ?? "";
+const dongTT = (nhan, giaTri, chepDuoc = true) => giaTri === "" || giaTri === null || giaTri === undefined
+  ? ""
+  : `<div class="dong-tt"><span class="nhan-tt">${thoat(nhan)}</span>
+     <span class="gia-tt">${chepDuoc ? chep(giaTri) : thoat(giaTri)}</span></div>`;
+
+const CHI_TIET = {
+  vatpham: (x) => ({
+    anh: x.iconID, ten: x.name, phu: x.description,
+    dong: dongTT("Id vật phẩm", x.id) + dongTT("Id ảnh", x.iconID) +
+      dongTT("Loại", `${LOAI_VAT_PHAM[x.type] ?? "?"} (${x.type})`, false) +
+      dongTT("Hành tinh", `${HANH_TINH[x.gender]?.ten ?? x.gender} (${x.gender})`, false) +
+      dongTT("Sức mạnh yêu cầu", x.strRequire.toLocaleString("vi-VN"), false) +
+      dongTT("Cấp", x.level, false) + dongTT("Part ngoại hình", x.part) +
+      dongTT("Xếp chồng", x.isUpToUp ? "có" : "không", false)
+  }),
+  quai: (x) => ({
+    anh: -1, ten: x.name, phu: `Quái · id ${x.mobTemplateId}`,
+    dong: dongTT("Id quái", x.mobTemplateId) +
+      dongTT("Máu", x.hp.toLocaleString("vi-VN"), false) + dongTT("Loại", x.type, false) +
+      dongTT("Tầm đi", x.rangeMove, false) + dongTT("Tốc độ", x.speed, false) +
+      dongTT("Phi tiêu", x.dartType, false)
+  }),
+  npc: (x) => ({
+    anh: x.headId, ten: x.name, phu: `NPC · id ${x.npcTemplateId}`,
+    dong: dongTT("Id NPC", x.npcTemplateId) + dongTT("Id đầu", x.headId) +
+      dongTT("Id thân", x.bodyId) + dongTT("Id chân", x.legId) +
+      (x.menu || []).map((m, i) =>
+        dongTT(`Menu ${i}`, (m || []).join(" · "))).join("")
+  }),
+  option: (x) => ({
+    anh: -1, ten: x.name, phu: `Option vật phẩm · id ${x.id}`,
+    dong: dongTT("Id option", x.id) + dongTT("Loại", x.type, false) + dongTT("Tên", x.name)
+  }),
+  map: (x) => ({
+    anh: -1, ten: x.name, phu: `Map · id ${x.id}`,
+    dong: dongTT("Id map", x.id) + dongTT("Tên map", x.name)
+  })
+};
+
+let dangXem = null;
+
+function moNgan(i) {
+  const x = dangHien[i];
+  if (!x) return;
+  dangXem = x;
+
+  const ct = CHI_TIET[T.muc](x);
+  $("ngan").innerHTML = `
+    <div class="ngan-dau">
+      ${ct.anh >= 0 ? veAnh(ct.anh) : ""}
+      <div style="min-width:0">
+        <h2>${thoat(ct.ten)}</h2>
+        <p>${thoat(ct.phu ?? "")}</p>
+      </div>
+    </div>
+    <div class="ngan-than">${ct.dong}</div>
+    <div class="ngan-chan">
+      <button class="nut" id="chep-json">Chép JSON</button>
+      <button class="nut" id="dong-ngan">Đóng</button>
+    </div>`;
+
+  $("ngan").classList.add("hien");
+  $("ngan").setAttribute("aria-hidden", "false");
+  $("man").classList.add("hien");
+  $("chep-json").onclick = () => chepChu(JSON.stringify(x, null, 2), "Đã chép JSON");
+  $("dong-ngan").onclick = dongNgan;
+
+  document.querySelectorAll("[data-i]").forEach((e) =>
+    e.setAttribute("aria-selected", String(Number(e.dataset.i) === i)));
 }
 
-function idCua(x) {
-  return x.id ?? x.mobTemplateId ?? x.npcTemplateId ?? x.classId ?? 0;
+function dongNgan() {
+  $("ngan").classList.remove("hien");
+  $("ngan").setAttribute("aria-hidden", "true");
+  $("man").classList.remove("hien");
+  dangXem = null;
+  document.querySelectorAll('[data-i][aria-selected="true"]')
+    .forEach((e) => e.removeAttribute("aria-selected"));
 }
+
+// ══════════ lọc và sắp ══════════
+
+const idCua = (x) => x.id ?? x.mobTemplateId ?? x.npcTemplateId ?? 0;
 
 function loc(ds) {
-  const q = khongDau(trangThai.tim.trim());
+  const q = khongDau(T.tim.trim());
   let ra = ds;
 
   if (q) {
     ra = ds.filter((x) =>
-      khongDau(tenCua(x)).includes(q) ||
+      khongDau(x.name).includes(q) ||
       khongDau(x.description).includes(q) ||
       String(idCua(x)) === q);
   }
 
-  if (trangThai.sap === "ten") {
-    ra = ra.slice().sort((a, b) => tenCua(a).localeCompare(tenCua(b), "vi"));
-  } else if (ra !== ds) {
-    ra = ra.slice().sort((a, b) => idCua(a) - idCua(b));
-  }
-
+  if (T.sap === "ten") ra = ra.slice().sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "", "vi"));
   return ra;
 }
 
-// ==================== vẽ lại ====================
+/** Lọc cây kĩ năng: giữ chiêu nào khớp, lớp nào không còn chiêu thì bỏ luôn. */
+function locChieu(ds) {
+  const q = khongDau(T.tim.trim());
+  if (!q) return ds;
+  return ds
+    .map((lop) => ({
+      ...lop,
+      skillTemplates: (lop.skillTemplates || []).filter((st) =>
+        khongDau(st.name).includes(q) || khongDau(st.description).includes(q) ||
+        khongDau(st.damInfo).includes(q) || String(st.id) === q)
+    }))
+    .filter((lop) => lop.skillTemplates.length > 0);
+}
+
+// ══════════ vẽ lại ══════════
 
 let phienVe = 0;
 
 async function ve() {
   const phien = ++phienVe;
   const noi = $("noi-dung");
-  const muc = MUC[trangThai.muc];
-
-  $("link-json").href = `${trangThai.nph}/${trangThai.sv}/${muc.tep}`;
+  $("link-json").href = `${T.nph}/${T.sv}/${MUC[T.muc].tep}`;
 
   let ds;
   try {
-    ds = await layMuc(trangThai.muc);
+    ds = await layMuc(T.muc);
   } catch (e) {
     if (phien !== phienVe) return;
-    noi.innerHTML = `<p class="trong-rong loi">Không đọc được ${thoat(muc.tep)}: ${thoat(e.message)}</p>`;
+    noi.innerHTML = `<p class="trong-rong loi">Không đọc được ${thoat(MUC[T.muc].tep)}: ${thoat(e.message)}
+      <br>Có thể workflow chưa chạy lần nào.</p>`;
     $("dem").textContent = "";
+    dangHien = [];
     return;
   }
   if (phien !== phienVe) return;
+  dongNgan();
 
-  // Kĩ năng lồng nhau nên lọc theo cây riêng, không dùng được hàm loc() phẳng.
-  if (trangThai.muc === "chieu") {
+  if (T.muc === "chieu") {
     const cay = locChieu(ds);
-    const demChieu = (x) => x.reduce((t, l) => t + l.skillTemplates.length, 0);
-    noi.innerHTML = cay.length
-      ? veChieu(cay)
-      : `<p class="trong-rong">Không có kĩ năng nào khớp “${thoat(trangThai.tim)}”.</p>`;
-    $("dem").innerHTML = trangThai.tim.trim()
+    const demChieu = (a) => a.reduce((t, l) => t + l.skillTemplates.length, 0);
+    noi.innerHTML = cay.length ? veChieu(cay)
+      : `<p class="trong-rong">Không có kĩ năng nào khớp “${thoat(T.tim)}”.</p>`;
+    $("dem").innerHTML = T.tim.trim()
       ? `<b>${demChieu(cay)}</b>/${demChieu(ds)} kĩ năng`
-      : `<b>${demChieu(ds)}</b> kĩ năng, ${ds.length} lớp`;
+      : `<b>${demChieu(ds)}</b> kĩ năng · ${ds.length} lớp`;
+    dangHien = [];
     return;
   }
 
-  const loc1 = loc(ds);
-  noi.innerHTML = loc1.length
-    ? muc.ve(loc1)
-    : `<p class="trong-rong">Không có mục nào khớp “${thoat(trangThai.tim)}”.</p>`;
-  $("dem").innerHTML = loc1.length === ds.length
+  dangHien = loc(ds);
+  noi.innerHTML = dangHien.length ? VE[T.muc](dangHien)
+    : `<p class="trong-rong">Không có mục nào khớp “${thoat(T.tim)}”.</p>`;
+  $("dem").innerHTML = dangHien.length === ds.length
     ? `<b>${ds.length}</b> mục`
-    : `<b>${loc1.length}</b>/${ds.length} mục`;
+    : `<b>${dangHien.length}</b>/${ds.length} mục`;
 }
 
 async function veMocCapNhat() {
   try {
-    const res = await fetch(`${trangThai.nph}/${trangThai.sv}/LastUpdated`, { cache: "no-cache" });
+    const res = await fetch(`${T.nph}/${T.sv}/LastUpdated`, { cache: "no-cache" });
     if (!res.ok) throw new Error();
-    const t = new Date((await res.text()).trim());
-    $("capnhat").textContent = "cập nhật " + t.toLocaleString("vi-VN");
+    $("capnhat").textContent = "cập nhật " + new Date((await res.text()).trim()).toLocaleString("vi-VN");
   } catch {
     $("capnhat").textContent = "";
   }
 }
 
-// ==================== khung điều khiển ====================
+// ══════════ khung điều khiển ══════════
 
 function veTab() {
   $("tab").innerHTML = Object.entries(MUC).map(([k, v]) =>
-    `<button role="tab" data-muc="${k}" aria-selected="${k === trangThai.muc}">${v.ten}</button>`).join("");
+    `<button role="tab" data-muc="${k}" aria-selected="${k === T.muc}">${v.ten}</button>`).join("");
 }
 
 function veChonSv() {
   const sel = $("chon-sv");
-  sel.innerHTML = trangThai.chiMuc.nhaPhatHanh.map((n) =>
+  sel.innerHTML = T.chiMuc.nhaPhatHanh.map((n) =>
     `<optgroup label="${thoat(n.ten)}">${n.mayChu.map((m) =>
       `<option value="${thoat(n.id)}|${thoat(m.id)}">${thoat(m.ten)}</option>`).join("")}</optgroup>`).join("");
-  sel.value = `${trangThai.nph}|${trangThai.sv}`;
+  sel.value = `${T.nph}|${T.sv}`;
 }
 
 function docHash() {
   const m = location.hash.match(/^#\/([^/]+)\/([^/]+)\/([^/?]+)/);
   if (!m) return;
-  trangThai.nph = decodeURIComponent(m[1]);
-  trangThai.sv = decodeURIComponent(m[2]);
-  if (MUC[m[3]]) trangThai.muc = m[3];
+  T.nph = decodeURIComponent(m[1]);
+  T.sv = decodeURIComponent(m[2]);
+  if (MUC[m[3]]) T.muc = m[3];
 }
 
 function ghiHash() {
-  const h = `#/${trangThai.nph}/${trangThai.sv}/${trangThai.muc}`;
+  const h = `#/${T.nph}/${T.sv}/${T.muc}`;
   if (location.hash !== h) history.replaceState(null, "", h);
 }
 
@@ -569,16 +782,16 @@ async function khoiDong() {
   try { datMau(localStorage.getItem("datanro-mau") || "toi"); } catch {}
 
   try {
-    trangThai.chiMuc = await docJson("index.json");
+    T.chiMuc = await docJson("index.json");
   } catch {
     // Chạy tay một máy chủ thì chưa có index.json, cứ dùng mặc định.
-    trangThai.chiMuc = MAC_DINH;
+    T.chiMuc = MAC_DINH;
   }
 
-  const dau = trangThai.chiMuc.nhaPhatHanh?.[0];
+  const dau = T.chiMuc.nhaPhatHanh?.[0];
   if (dau) {
-    trangThai.nph = dau.id;
-    trangThai.sv = dau.mayChu?.[0]?.id ?? trangThai.sv;
+    T.nph = dau.id;
+    T.sv = dau.mayChu?.[0]?.id ?? T.sv;
   }
   docHash();
 
@@ -591,16 +804,14 @@ async function khoiDong() {
   $("tab").addEventListener("click", (e) => {
     const b = e.target.closest("button[data-muc]");
     if (!b) return;
-    trangThai.muc = b.dataset.muc;
+    T.muc = b.dataset.muc;
     veTab();
     ghiHash();
     ve();
   });
 
   $("chon-sv").addEventListener("change", (e) => {
-    const [nph, sv] = e.target.value.split("|");
-    trangThai.nph = nph;
-    trangThai.sv = sv;
+    [T.nph, T.sv] = e.target.value.split("|");
     ghiHash();
     veMocCapNhat();
     ve();
@@ -608,34 +819,54 @@ async function khoiDong() {
 
   let hen;
   $("tim").addEventListener("input", (e) => {
-    trangThai.tim = e.target.value;
+    T.tim = e.target.value;
     clearTimeout(hen);
-    hen = setTimeout(ve, 150);
+    hen = setTimeout(ve, 140);
   });
 
-  $("sap").addEventListener("change", (e) => {
-    trangThai.sap = e.target.value;
-    ve();
+  $("sap").addEventListener("change", (e) => { T.sap = e.target.value; ve(); });
+  $("doi-mau").addEventListener("click", () =>
+    datMau(document.documentElement.dataset.theme === "toi" ? "sang" : "toi"));
+
+  // Chép cả loạt id đang hiện: dựng danh sách id cho tool thì cần đúng cái này.
+  $("chep-tat").addEventListener("click", () => {
+    if (!dangHien.length) return banh("Không có gì để chép");
+    const ids = dangHien.map(idCua).join(",");
+    chepChu(ids, `Đã chép ${dangHien.length} id`);
   });
 
-  $("doi-mau").addEventListener("click", () => {
-    datMau(document.documentElement.dataset.theme === "toi" ? "sang" : "toi");
+  // Chip chép bắt ở tầng document: chúng có mặt cả trong bảng lẫn trong ngăn chi tiết, gắn
+  // riêng từng chỗ là kiểu gì cũng quên một chỗ.
+  document.addEventListener("click", (e) => {
+    const c = e.target.closest("[data-chep]");
+    if (!c) return;
+    e.stopPropagation();
+    chepChu(c.dataset.chep);
+    c.classList.add("xong");
+    setTimeout(() => c.classList.remove("xong"), 900);
   });
 
-  // Bấm lùi/tiến hoặc dán một địa chỉ có sẵn #/... thì phải theo, không thì nút lùi của
-  // trình duyệt đổi địa chỉ mà trang đứng im.
+  // Bấm vào hàng (chỗ nào không phải chip) thì mở ngăn chi tiết.
+  $("noi-dung").addEventListener("click", (e) => {
+    if (e.target.closest("[data-chep]")) return;
+    const hang = e.target.closest("[data-i]");
+    if (hang && T.muc !== "chieu") moNgan(Number(hang.dataset.i));
+  });
+
+  $("man").addEventListener("click", dongNgan);
+
   window.addEventListener("hashchange", () => {
-    const truoc = `${trangThai.nph}|${trangThai.sv}|${trangThai.muc}`;
+    const truoc = `${T.nph}|${T.sv}|${T.muc}`;
     docHash();
-    if (`${trangThai.nph}|${trangThai.sv}|${trangThai.muc}` === truoc) return;
+    if (`${T.nph}|${T.sv}|${T.muc}` === truoc) return;
     veTab();
     veChonSv();
     veMocCapNhat();
     ve();
   });
 
-  // Gõ "/" là nhảy vào ô tìm, quen tay như mọi trang tra cứu khác.
   document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") return dongNgan();
     if (e.key === "/" && document.activeElement !== $("tim")) {
       e.preventDefault();
       $("tim").focus();
