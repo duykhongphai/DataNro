@@ -69,8 +69,11 @@ a { color: var(--nhan); }
 ::selection { background: var(--nhan); color: var(--nhan-chu); }
 
 /* ══════════ thanh trên ══════════ */
+/* z-index phải cao hơn lớp phủ của ngăn chi tiết (40). Để thấp hơn thì mở một mục ra rồi bấm
+   sang tab khác là cú bấm đầu chỉ đóng ngăn, phải bấm lần nữa mới đổi được tab - nhìn cứ như
+   trang bị treo. Ngăn (42) vẫn nổi trên thanh này nên góc trên phải không bị hụt. */
 .dinh {
-  position: sticky; top: 0; z-index: 30;
+  position: sticky; top: 0; z-index: 41;
   background: color-mix(in srgb, var(--nen) 92%, transparent);
   backdrop-filter: saturate(1.4) blur(12px);
   border-bottom: 1px solid var(--vien);
@@ -348,7 +351,7 @@ details.chieu > summary .o-anh img { max-width: 54px; max-height: 54px; }
 }
 .man.hien { opacity: 1; pointer-events: auto; }
 aside.ngan {
-  position: fixed; top: 0; right: 0; bottom: 0; z-index: 41; width: 410px; max-width: 92vw;
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 42; width: 410px; max-width: 92vw;
   background: var(--noi); border-left: 1px solid var(--vien); box-shadow: var(--bong-3);
   transform: translateX(102%); transition: transform .22s cubic-bezier(.32, .72, 0, 1);
   display: flex; flex-direction: column;
@@ -926,7 +929,7 @@ const CHI_TIET = {
       dongTT("Xếp chồng", x.isUpToUp ? "có" : "không", false)
   }),
   quai: (x) => ({
-    hinh: veHinhQuai(x.mobTemplateId),
+    hinh: veHinhQuai(x.mobTemplateId, true),
     ten: x.name, phu: `Quái · id ${x.mobTemplateId}`,
     dong: dongTT("Id quái", x.mobTemplateId) +
       dongTT("Máu", x.hp.toLocaleString("vi-VN"), false) + dongTT("Loại", x.type, false) +
@@ -936,7 +939,7 @@ const CHI_TIET = {
   npc: (x) => ({
     // headId không phải id ảnh mà là CHỈ SỐ vào bảng part - đưa thẳng cho veAnh thì ra một
     // tấm ảnh chẳng liên quan. Ghép lại đúng như ngoài thẻ.
-    hinh: veHinhNpc(x),
+    hinh: veHinhNpc(x, true),
     ten: x.name, phu: `NPC · id ${x.npcTemplateId}`,
     dong: dongTT("Id NPC", x.npcTemplateId) + dongTT("Part đầu", x.headId) +
       dongTT("Part thân", x.bodyId) + dongTT("Part chân", x.legId) +
@@ -947,7 +950,7 @@ const CHI_TIET = {
     dong: dongTT("Id option", x.id) + dongTT("Loại", x.type, false) + dongTT("Tên", x.name)
   }),
   hieuung: (x) => ({
-    hinh: veHieuUng(x), ten: `Hiệu ứng ${x.id}`, phu: `Hiệu ứng · id ${x.id}`,
+    hinh: veHieuUng(x, true), ten: `Hiệu ứng ${x.id}`, phu: `Hiệu ứng · id ${x.id}`,
     dong: dongTT("Id hiệu ứng", x.id) + dongTT("Số khung", x.n, false) +
       dongTT("Cỡ một khung", `${x.w} × ${x.h} px`, false) +
       dongTT("Ảnh dải", `EffectHinh/${x.id}.png`) +
