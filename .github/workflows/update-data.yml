@@ -231,13 +231,34 @@ jobs:
         run: |
           set -e
           mkdir -p taive
+          goc="$PWD"
 
           for nph in */; do
             nph="${nph%/}"
             [ -d "$nph/Icons" ] || continue
 
+            # Trong repo thì Icons phải chia thư mục nghìn (Icons/17/17529.png), không thì
+            # GitHub cắt bớt danh sách lúc duyệt. Tải zip về lại chẳng ai cần chuyện đó -
+            # mười bảy thư mục chỉ tổ khó tìm. Tên tệp là id nên vốn đã không trùng nhau,
+            # dồn chung một thư mục vẫn đủ chỗ cho cả mười bảy nghìn ảnh.
+            #
+            # Dựng bản phẳng bằng liên kết cứng: chỉ thêm mục lục chứ không chép lại byte
+            # nào, và cây làm việc sắp đem đi commit vẫn nguyên vẹn.
+            goi="taive/.goi"
+            rm -rf "$goi"
+            mkdir -p "$goi/$nph/Icons"
+            find "$nph/Icons" -type f -exec cp -l -t "$goi/$nph/Icons/" {} +
+
+            # NpcHinh phải ở thư mục riêng: ảnh NPC cũng đánh số từ 0 nên trộn vào Icons là
+            # đè lên nhau ngay.
+            if [ -d "$nph/NpcHinh" ]; then
+              cp -rl "$nph/NpcHinh" "$goi/$nph/"
+            fi
+
             # -0 là xếp cạnh nhau không nén: PNG vốn đã nén rồi, ép thêm chỉ tốn thời gian.
-            zip -q -r -0 "taive/$nph-anh.zip" "$nph/Icons"               $([ -d "$nph/NpcHinh" ] && echo "$nph/NpcHinh")
+            ( cd "$goi" && zip -q -r -0 "$goc/taive/$nph-anh.zip" "$nph" )
+            rm -rf "$goi"
+
             [ -d "$nph/Mobs" ] && zip -q -r -0 "taive/$nph-quai.zip" "$nph/Mobs"               $([ -d "$nph/MobHinh" ] && echo "$nph/MobHinh")
             [ -d "$nph/Maps" ] && zip -q -r "taive/$nph-map.zip" "$nph/Maps"
             [ -d "$nph/Effects" ] && zip -q -r -0 "taive/$nph-hieuung.zip" "$nph/Effects"

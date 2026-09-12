@@ -44,6 +44,10 @@ lần workflow chạy: `<nhà phát hành>-anh.zip`, `-quai.zip`, `-map.zip`, `-
 100 MB là GitHub chặn thẳng, mà mỗi ngày một bản mới cũng phình lịch sử git rất nhanh — Release
 thì không tính vào đó.
 
+Trong `-anh.zip` thì ảnh dồn hết vào một thư mục `Icons/` phẳng chứ không chia thư mục nghìn như
+trong repo — tên tệp là id nên vốn đã không trùng nhau. Ảnh NPC vẫn để riêng ở `NpcHinh/` vì cũng
+đánh số từ 0, trộn chung là đè lên nhau.
+
 `TeaMobi/Maps/MapTiles.json` là bố cục ô của từng map: `{"id":0,"w":52,"h":24,"tiles":[…]}`,
 mảng `tiles` dài `w*h`, mỗi số là chỉ số ảnh trong bộ tile của map, `0` là ô trống.
 
