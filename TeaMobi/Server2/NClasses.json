@@ -2,7 +2,7 @@
   {
     "classId": 0,
     "name": "Trái đất",
-    "serverName": "Chưa vào lớp",
+    "serverName": "Trái đất",
     "skillTemplates": [
       {
         "id": 0,
@@ -975,7 +975,7 @@
   {
     "classId": 1,
     "name": "Namếc",
-    "serverName": "Ninja Kiếm",
+    "serverName": "Namếc",
     "skillTemplates": [
       {
         "id": 2,
@@ -1948,7 +1948,7 @@
   {
     "classId": 2,
     "name": "Xayda",
-    "serverName": "Ninja Phi Tiêu",
+    "serverName": "Xayda",
     "skillTemplates": [
       {
         "id": 4,
@@ -2920,8 +2920,8 @@
   },
   {
     "classId": 3,
-    "name": "Ninja Kunai",
-    "serverName": "Ninja Kunai",
+    "name": "Chung",
+    "serverName": "Chung",
     "skillTemplates": [
       {
         "id": 19,
@@ -3030,8 +3030,8 @@
   },
   {
     "classId": 4,
-    "name": "Ninja Cung",
-    "serverName": "Ninja Cung",
+    "name": "Biến Khỉ",
+    "serverName": "Biến Khỉ",
     "skillTemplates": [
       {
         "id": 15,
@@ -3080,226 +3080,6 @@
             "coolDown": 0,
             "powRequire": 0,
             "moreInfo": "a"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "classId": 5,
-    "name": "Ninja Đao",
-    "serverName": "Ninja Đao",
-    "skillTemplates": [
-      {
-        "id": 19,
-        "maxPoint": 7,
-        "manaUseType": 1,
-        "type": 3,
-        "iconId": 3784,
-        "name": "Khiên năng lượng",
-        "description": "Khiên năng lượng",
-        "damInfo": "Vô hiệu các đòn tấn công",
-        "skills": [
-          {
-            "point": 1,
-            "maxFight": 1,
-            "manaUse": 51,
-            "skillId": 121,
-            "dx": 0,
-            "dy": 0,
-            "damage": 15,
-            "price": 9999,
-            "coolDown": 75000,
-            "powRequire": 10000000,
-            "moreInfo": "Khiên năng lượng 1"
-          },
-          {
-            "point": 2,
-            "maxFight": 1,
-            "manaUse": 48,
-            "skillId": 122,
-            "dx": 0,
-            "dy": 0,
-            "damage": 20,
-            "price": 9999,
-            "coolDown": 80000,
-            "powRequire": 25000000,
-            "moreInfo": "Khiên năng lượng 2"
-          },
-          {
-            "point": 3,
-            "maxFight": 1,
-            "manaUse": 45,
-            "skillId": 123,
-            "dx": 0,
-            "dy": 0,
-            "damage": 25,
-            "price": 9999,
-            "coolDown": 85000,
-            "powRequire": 50000000,
-            "moreInfo": "Khiên năng lượng 3"
-          },
-          {
-            "point": 4,
-            "maxFight": 1,
-            "manaUse": 42,
-            "skillId": 124,
-            "dx": 0,
-            "dy": 0,
-            "damage": 30,
-            "price": 9999,
-            "coolDown": 90000,
-            "powRequire": 125000000,
-            "moreInfo": "Khiên năng lượng 4"
-          },
-          {
-            "point": 5,
-            "maxFight": 1,
-            "manaUse": 39,
-            "skillId": 125,
-            "dx": 0,
-            "dy": 0,
-            "damage": 35,
-            "price": 9999,
-            "coolDown": 95000,
-            "powRequire": 625000000,
-            "moreInfo": "Khiên năng lượng 5"
-          },
-          {
-            "point": 6,
-            "maxFight": 1,
-            "manaUse": 36,
-            "skillId": 126,
-            "dx": 0,
-            "dy": 0,
-            "damage": 40,
-            "price": 9999,
-            "coolDown": 100000,
-            "powRequire": 3125000000,
-            "moreInfo": "Khiên năng lượng 6"
-          },
-          {
-            "point": 7,
-            "maxFight": 1,
-            "manaUse": 33,
-            "skillId": 127,
-            "dx": 0,
-            "dy": 0,
-            "damage": 45,
-            "price": 9999,
-            "coolDown": 105000,
-            "powRequire": 15625000000,
-            "moreInfo": "Khiên năng lượng 7"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "classId": 6,
-    "name": "Ninja Quạt",
-    "serverName": "Ninja Quạt",
-    "skillTemplates": [
-      {
-        "id": 19,
-        "maxPoint": 7,
-        "manaUseType": 1,
-        "type": 3,
-        "iconId": 3784,
-        "name": "Khiên năng lượng",
-        "description": "Khiên năng lượng",
-        "damInfo": "Vô hiệu các đòn tấn công",
-        "skills": [
-          {
-            "point": 1,
-            "maxFight": 1,
-            "manaUse": 51,
-            "skillId": 121,
-            "dx": 0,
-            "dy": 0,
-            "damage": 15,
-            "price": 9999,
-            "coolDown": 75000,
-            "powRequire": 10000000,
-            "moreInfo": "Khiên năng lượng 1"
-          },
-          {
-            "point": 2,
-            "maxFight": 1,
-            "manaUse": 48,
-            "skillId": 122,
-            "dx": 0,
-            "dy": 0,
-            "damage": 20,
-            "price": 9999,
-            "coolDown": 80000,
-            "powRequire": 25000000,
-            "moreInfo": "Khiên năng lượng 2"
-          },
-          {
-            "point": 3,
-            "maxFight": 1,
-            "manaUse": 45,
-            "skillId": 123,
-            "dx": 0,
-            "dy": 0,
-            "damage": 25,
-            "price": 9999,
-            "coolDown": 85000,
-            "powRequire": 50000000,
-            "moreInfo": "Khiên năng lượng 3"
-          },
-          {
-            "point": 4,
-            "maxFight": 1,
-            "manaUse": 42,
-            "skillId": 124,
-            "dx": 0,
-            "dy": 0,
-            "damage": 30,
-            "price": 9999,
-            "coolDown": 90000,
-            "powRequire": 125000000,
-            "moreInfo": "Khiên năng lượng 4"
-          },
-          {
-            "point": 5,
-            "maxFight": 1,
-            "manaUse": 39,
-            "skillId": 125,
-            "dx": 0,
-            "dy": 0,
-            "damage": 35,
-            "price": 9999,
-            "coolDown": 95000,
-            "powRequire": 625000000,
-            "moreInfo": "Khiên năng lượng 5"
-          },
-          {
-            "point": 6,
-            "maxFight": 1,
-            "manaUse": 36,
-            "skillId": 126,
-            "dx": 0,
-            "dy": 0,
-            "damage": 40,
-            "price": 9999,
-            "coolDown": 100000,
-            "powRequire": 3125000000,
-            "moreInfo": "Khiên năng lượng 6"
-          },
-          {
-            "point": 7,
-            "maxFight": 1,
-            "manaUse": 33,
-            "skillId": 127,
-            "dx": 0,
-            "dy": 0,
-            "damage": 45,
-            "price": 9999,
-            "coolDown": 105000,
-            "powRequire": 15625000000,
-            "moreInfo": "Khiên năng lượng 7"
           }
         ]
       }
