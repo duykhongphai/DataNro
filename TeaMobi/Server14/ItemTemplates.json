@@ -24932,7 +24932,7 @@
     "strRequire": 0,
     "iconID": 17521,
     "part": -1,
-    "name": "Pet Cừu đen",
+    "name": "Pet Cừu không mập",
     "description": "Vật phẩm sự kiện"
   },
   {
@@ -25018,5 +25018,101 @@
     "part": -1,
     "name": "Trứng Xên Vàng",
     "description": "Nở ra pet Xên Bọ Hung chỉ số tối đa"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2085,
+    "type": 5,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 17604,
+    "part": -1,
+    "name": "Cải Trang Bunma bụi",
+    "description": "Vật phẩm sự kiện"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2086,
+    "type": 5,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 17666,
+    "part": -1,
+    "name": "Cải Trang Póc đường phố",
+    "description": "Vật phẩm sự kiện"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2087,
+    "type": 27,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 17636,
+    "part": -1,
+    "name": "Trăng khuyết",
+    "description": "Vật phẩm đua top"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2088,
+    "type": 27,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 17635,
+    "part": -1,
+    "name": "Trăng tròn",
+    "description": "Vật phẩm đua top"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2089,
+    "type": 27,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 17638,
+    "part": -1,
+    "name": "Mảnh thẻ VIP",
+    "description": "Vật phẩm đua top"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2090,
+    "type": 27,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 17637,
+    "part": -1,
+    "name": "Hộp nâng cấp đồ thiên sứ",
+    "description": "Vật phẩm đua top"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2091,
+    "type": 5,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 17633,
+    "part": -1,
+    "name": "Cải Trang Lý Tiểu Nương đường phố",
+    "description": "Vật phẩm sự kiện"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2092,
+    "type": 11,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 13852,
+    "part": 136,
+    "name": "Hỏa tiêm thương",
+    "description": "Vật phẩm sự kiện (chỉ dành cho đệ tử 2)"
   }
 ]
