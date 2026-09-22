@@ -1,7 +1,9 @@
 # Chứa các liên kết map không thể tìm kiếm tự động hoặc một chiều
 # Siêu thị -> Hành tinh tự động được thêm trong code (không cần trong đây)
 # Tpvgt -> Cold tự động được thêm trong code (không cần trong đây)
-
+# Ngũ Hành Sơn - Làng Aru
+	123 0 1 49 0 
+	0 123 1 49 0
 # Trái Đất - Namec
 	24 25 1 10 0
 	25 24 1 11 0
