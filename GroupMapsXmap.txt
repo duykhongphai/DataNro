@@ -22,3 +22,5 @@ Doanh trại|Barracks
 	53 58 59 60 61 62 55 56 54 57
 Khí Gas|Gas
 	149 147 152 151 148
+Ngũ Hành Sơn
+	123 124 122
