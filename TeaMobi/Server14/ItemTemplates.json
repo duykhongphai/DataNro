@@ -25114,5 +25114,77 @@
     "part": 136,
     "name": "Hỏa tiêm thương",
     "description": "Vật phẩm sự kiện (chỉ dành cho đệ tử 2)"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2093,
+    "type": 5,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 17698,
+    "part": -1,
+    "name": "Cải Trang Goku Ninja",
+    "description": "Vật phẩm sự kiện"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2094,
+    "type": 18,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 17707,
+    "part": -1,
+    "name": "Pet ma dơi",
+    "description": "Vật phẩm sự kiện"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2095,
+    "type": 27,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 17710,
+    "part": -1,
+    "name": "Hộp đen bí ẩn",
+    "description": "Vật phẩm đua top"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2096,
+    "type": 38,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 17708,
+    "part": 518,
+    "name": "Bóng mờ hoa hồng đỏ",
+    "description": "Vật phẩm sự kiện"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2097,
+    "type": 38,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 17709,
+    "part": 519,
+    "name": "Bóng mờ hoa hồng băng",
+    "description": "Vật phẩm sự kiện"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2098,
+    "type": 29,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 17123,
+    "part": -1,
+    "name": "Năng lượng tà ác",
+    "description": "Giảm 10% chí mạng, tăng 100% sức đánh lên quái trong 10 phút"
   }
 ]
