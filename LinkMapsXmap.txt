@@ -1,6 +1,10 @@
 # Chứa các liên kết map không thể tìm kiếm tự động hoặc một chiều
 # Siêu thị -> Hành tinh tự động được thêm trong code (không cần trong đây)
 # Tpvgt -> Cold tự động được thêm trong code (không cần trong đây)
+# Đảo Kame - Khu Vực Bang
+	153 5 1 10 2 
+	5 153 1 13 0 2
+
 # Ngũ Hành Sơn - Làng Aru
 	123 0 1 49 0 
 	0 123 1 49 0
