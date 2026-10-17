@@ -1323,5 +1323,25 @@
     "id": 264,
     "type": 0,
     "name": "Hạn sử dụng: #"
+  },
+  {
+    "id": 265,
+    "type": 10,
+    "name": "$[2] Tăng vừa phải sức đánh và sát thương chí mạng"
+  },
+  {
+    "id": 266,
+    "type": 10,
+    "name": "$[4] Tăng đáng kể sức đánh và sát thương chí mạng"
+  },
+  {
+    "id": 267,
+    "type": 10,
+    "name": "$[5] Tăng mạnh sức đánh và sát thương chí mạng"
+  },
+  {
+    "id": 268,
+    "type": 0,
+    "name": "Set Thần hủy diệt Beerus"
   }
 ]

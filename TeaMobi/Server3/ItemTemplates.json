@@ -24993,7 +24993,7 @@
     "iconID": 17565,
     "part": -1,
     "name": "Cải trang Berus",
-    "description": "Vật phẩm sự kiện"
+    "description": "Đi chung với đủ 5 món SKH Beerus tăng 10% chí mạng"
   },
   {
     "isUpToUp": false,
@@ -25161,7 +25161,7 @@
     "iconID": 17708,
     "part": 518,
     "name": "Bóng mờ hoa hồng đỏ",
-    "description": "Vật phẩm sự kiện"
+    "description": "Đi chung với Pet Xên Max tăng 5% giảm sát thương"
   },
   {
     "isUpToUp": false,
@@ -25173,7 +25173,7 @@
     "iconID": 17709,
     "part": 519,
     "name": "Bóng mờ hoa hồng băng",
-    "description": "Vật phẩm sự kiện"
+    "description": "Đi chung Pet Xên Hoàn Hảo tăng 6% sát thương chí mạng"
   },
   {
     "isUpToUp": false,
@@ -25186,5 +25186,53 @@
     "part": -1,
     "name": "Năng lượng tà ác",
     "description": "Giảm 10% chí mạng, tăng 100% sức đánh lên quái trong 10 phút"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2099,
+    "type": 5,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 17735,
+    "part": -1,
+    "name": "Cải Trang công chúa quỷ",
+    "description": "Vật phẩm sự kiện"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2100,
+    "type": 23,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 17741,
+    "part": 77,
+    "name": "Ván Rồng 7 sao",
+    "description": "Vật phẩm sự kiện"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2101,
+    "type": 27,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 17740,
+    "part": -1,
+    "name": "Hộp hoa hồng",
+    "description": "Vật phẩm đua top"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2102,
+    "type": 27,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 17710,
+    "part": -1,
+    "name": "Set kích hoạt Beerus 1 món tự chọn",
+    "description": "Vật phẩm sự kiện"
   }
 ]
