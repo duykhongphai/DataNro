@@ -25234,5 +25234,41 @@
     "part": -1,
     "name": "Set kích hoạt Beerus 1 món tự chọn",
     "description": "Vật phẩm sự kiện"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2103,
+    "type": 11,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 17760,
+    "part": 184,
+    "name": "Đeo lưng 3 con ma",
+    "description": "Vật phẩm sự kiện"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2104,
+    "type": 5,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 17788,
+    "part": -1,
+    "name": "Cải trang tiểu thư Malfoy",
+    "description": "Vật phẩm sự kiện"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2105,
+    "type": 27,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 16895,
+    "part": -1,
+    "name": "Hộp Ngọc Rồng Bí",
+    "description": "Vật phẩm sự kiện"
   }
 ]
