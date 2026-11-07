@@ -25270,5 +25270,29 @@
     "part": -1,
     "name": "Hộp Ngọc Rồng Bí",
     "description": "Vật phẩm sự kiện"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2106,
+    "type": 33,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 17798,
+    "part": -1,
+    "name": "Mảnh Broly",
+    "description": "Vật phẩm sự kiện"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2107,
+    "type": 27,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 17805,
+    "part": -1,
+    "name": "Con dấu VIP",
+    "description": "Vật phẩm sự kiện"
   }
 ]
