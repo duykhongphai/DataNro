@@ -25294,5 +25294,53 @@
     "part": -1,
     "name": "Con dấu VIP",
     "description": "Vật phẩm sự kiện"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2108,
+    "type": 5,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 17807,
+    "part": -1,
+    "name": "Cải trang Gohan SSJ",
+    "description": "Vật phẩm sự kiện"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2109,
+    "type": 23,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 16329,
+    "part": 66,
+    "name": "Hộp bút bay",
+    "description": "Vật phẩm sự kiện"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2110,
+    "type": 27,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 17842,
+    "part": -1,
+    "name": "Giỏ hoa 20/11",
+    "description": "Vật phẩm đua top"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2111,
+    "type": 27,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 17843,
+    "part": -1,
+    "name": "Giấy tốt nghiệp",
+    "description": "Vật phẩm đua top"
   }
 ]
