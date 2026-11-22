@@ -222,16 +222,29 @@ public sealed class BoAnh
         }
     }
 
-    /// <summary>Gộp thêm id mới vào danh sách "không có" rồi ghi lại.</summary>
-    public static void GhiKhongCo(string thuMucRa, IEnumerable<int> them)
+    /// <summary>
+    /// Cập nhật danh sách "không có": gộp id mới, đồng thời bỏ những id nay đã tải được.
+    ///
+    /// <para>
+    /// Kho ảnh của game thay đổi theo thời gian: một id trống hôm nay có thể được dùng cho
+    /// vật phẩm mới vào ngày mai. Vì vậy danh sách này không được chỉ có thêm mà không có
+    /// bớt, nếu không ảnh mới sẽ mắc kẹt trong blacklist vĩnh viễn.
+    /// </para>
+    /// </summary>
+    public static void GhiKhongCo(string thuMucRa, IEnumerable<int> them,
+        IEnumerable<int> daCo = null)
     {
+        var duong = Path.Combine(thuMucRa, "KhongCo.json");
         var gop = DocKhongCo(thuMucRa);
-        var truoc = gop.Count;
-        foreach (var id in them) gop.Add(id);
-        if (gop.Count == truoc && truoc > 0) return;
+        var daDoi = false;
+        foreach (var id in them) daDoi |= gop.Add(id);
+        if (daCo != null)
+            foreach (var id in daCo) daDoi |= gop.Remove(id);
+
+        if (!daDoi && File.Exists(duong)) return;
 
         Directory.CreateDirectory(thuMucRa);
-        File.WriteAllText(Path.Combine(thuMucRa, "KhongCo.json"),
+        File.WriteAllText(duong,
             JsonSerializer.Serialize(gop.OrderBy(x => x)) + "\n");
     }
 

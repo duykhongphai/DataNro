@@ -255,6 +255,12 @@ public static class Program
         var daCo = BoAnh.DaCoTrenDia(thuMucAnh);
         var khongCo = BoAnh.DocKhongCo(thuMucAnh);
 
+        // KhongCo.json chỉ là kết quả của những lần quét mù trước. Game có thể lấy một id
+        // từng trống để gán cho vật phẩm mới, nên mọi id hiện được bảng dữ liệu tham chiếu
+        // phải được hỏi lại nếu chưa có file, bất kể blacklist cũ nói gì.
+        var dangDuocDung = BoAnh.GomId(phienDau.Data).ToHashSet();
+        khongCo.ExceptWith(dangDuocDung);
+
         var canHoi = tatCa.Where(id => !daCo.Contains(id) && !khongCo.Contains(id)).ToList();
         var hang = new HangAnh(canHoi);
 
@@ -279,11 +285,10 @@ public static class Program
             i, tk, i == 0 ? phienDau : null, hang, moiPhat, c, thuMucAnh, hetAnh.Token)).ToList();
         await Task.WhenAll(viec).ConfigureAwait(false);
 
-        BoAnh.GhiKhongCo(thuMucAnh, moiPhat.KhongCo);
-
         // Đếm theo danh sách CẦN chứ không theo số tệp ngoài đĩa: đĩa còn giữ cả ảnh của
         // những lần chạy trước không còn ai tham chiếu, lấy hiệu hai số ra âm ngay.
         var coTrenDia = BoAnh.DaCoTrenDia(thuMucAnh);
+        BoAnh.GhiKhongCo(thuMucAnh, moiPhat.KhongCo, coTrenDia);
         var thieu = tatCa.Count(id => !coTrenDia.Contains(id));
         Console.WriteLine($"  ảnh: {tatCa.Count - thieu}/{tatCa.Count} id có ảnh " +
                           $"(lần chạy này thêm {moiPhat.Nhan}, trên đĩa tổng cộng {coTrenDia.Count} tệp). " +
