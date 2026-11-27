@@ -25342,5 +25342,29 @@
     "part": -1,
     "name": "Giấy tốt nghiệp",
     "description": "Vật phẩm đua top"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2112,
+    "type": 38,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 17845,
+    "part": 520,
+    "name": "Bóng mờ sinh nhật 13 tuổi NRO",
+    "description": "Vật phẩm sự kiện"
+  },
+  {
+    "isUpToUp": false,
+    "id": 2113,
+    "type": 27,
+    "gender": 3,
+    "level": 1,
+    "strRequire": 0,
+    "iconID": 17844,
+    "part": -1,
+    "name": "Hộp Sao Pha Lê Vàng",
+    "description": "Vật phẩm sự kiện"
   }
 ]
